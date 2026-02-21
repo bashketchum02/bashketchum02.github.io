@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Bala - ML Research & Engineering</title>
+        <link>https://bashketchum02.github.io</link>
+        <description>Notes on Machine Learning & Systems</description>
+        <atom:link href="https://bashketchum02.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+        <language>en-us</language>
+        <lastBuildDate>Sat, 21 Feb 2026 22:05:23 +0000</lastBuildDate>
+        
+        <item>
+            <title>AI for productivity &amp; my heavily opinionated note taking system!</title>
+            <link>https://bashketchum02.github.io/posts/memnode.html</link>
+            <description>tldr; I vibe coded my ideal note taking system</description>
+            <pubDate>2026-02-21</pubDate>
+            <guid>https://bashketchum02.github.io/posts/memnode.html</guid>
+        </item>
+    </channel>
+</rss>

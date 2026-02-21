@@ -1,0 +1,200 @@
+/* ===== Syntax Highlighting Theme ===== */
+/* Cool indigo-tinted syntax theme */
+
+/* Base token colors */
+.hljs {
+    display: block;
+    overflow-x: auto;
+    color: var(--text-primary);
+    background: transparent;
+}
+
+/* Comments */
+.hljs-comment,
+.hljs-quote {
+    color: #85859A;
+    font-style: italic;
+}
+
+/* Keywords */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-addition {
+    color: #4338CA;
+}
+
+/* Strings */
+.hljs-string,
+.hljs-doctag,
+.hljs-regexp,
+.hljs-meta .hljs-string {
+    color: #0D9488;
+}
+
+/* Numbers */
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+    color: #B45309;
+}
+
+/* Functions */
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+    color: #6366F1;
+    font-weight: 500;
+}
+
+/* Types and Classes */
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-built_in {
+    color: #7C3AED;
+}
+
+/* Attributes and Properties */
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-subst,
+.hljs-meta {
+    color: #0284C7;
+}
+
+/* Deletion */
+.hljs-deletion {
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.08);
+}
+
+/* Addition */
+.hljs-addition {
+    color: #0D9488;
+    background: rgba(13, 148, 136, 0.08);
+}
+
+/* Emphasis */
+.hljs-emphasis {
+    font-style: italic;
+}
+
+/* Strong */
+.hljs-strong {
+    font-weight: bold;
+}
+
+/* Links */
+.hljs-link {
+    text-decoration: underline;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .hljs-comment,
+    .hljs-quote {
+        color: #5C5C74;
+    }
+
+    .hljs-keyword,
+    .hljs-selector-tag {
+        color: #818CF8;
+    }
+
+    .hljs-string,
+    .hljs-doctag,
+    .hljs-regexp,
+    .hljs-meta .hljs-string {
+        color: #2DD4BF;
+    }
+
+    .hljs-number,
+    .hljs-literal,
+    .hljs-variable,
+    .hljs-template-variable,
+    .hljs-tag .hljs-attr {
+        color: #FBBF24;
+    }
+
+    .hljs-title,
+    .hljs-section,
+    .hljs-name,
+    .hljs-selector-id,
+    .hljs-selector-class {
+        color: #A5B4FC;
+    }
+
+    .hljs-type,
+    .hljs-class .hljs-title,
+    .hljs-built_in {
+        color: #C4B5FD;
+    }
+
+    .hljs-attribute,
+    .hljs-symbol,
+    .hljs-bullet,
+    .hljs-subst,
+    .hljs-meta {
+        color: #67E8F9;
+    }
+
+    .hljs-deletion {
+        color: #FCA5A5;
+        background: rgba(252, 165, 165, 0.1);
+    }
+
+    .hljs-addition {
+        color: #2DD4BF;
+        background: rgba(45, 212, 191, 0.1);
+    }
+}
+
+/* Line numbers for code blocks */
+.line-numbers {
+    counter-reset: line;
+}
+
+.line-numbers .line::before {
+    counter-increment: line;
+    content: counter(line);
+    display: inline-block;
+    width: 2em;
+    margin-right: 1em;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.85em;
+    user-select: none;
+}
+
+/* Diff highlighting */
+.diff .hljs-deletion,
+.diff .deletion {
+    display: block;
+    background: rgba(220, 38, 38, 0.08);
+    margin: 0 calc(-1 * var(--space-xl));
+    padding: 0 var(--space-xl);
+}
+
+.diff .hljs-addition,
+.diff .addition {
+    display: block;
+    background: rgba(13, 148, 136, 0.08);
+    margin: 0 calc(-1 * var(--space-xl));
+    padding: 0 var(--space-xl);
+}
+
+@media (prefers-color-scheme: dark) {
+    .diff .hljs-deletion,
+    .diff .deletion {
+        background: rgba(252, 165, 165, 0.08);
+    }
+
+    .diff .hljs-addition,
+    .diff .addition {
+        background: rgba(45, 212, 191, 0.08);
+    }
+}
