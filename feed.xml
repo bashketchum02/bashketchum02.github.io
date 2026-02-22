@@ -6,13 +6,13 @@
         <description>Notes on Machine Learning & Systems</description>
         <atom:link href="https://bashketchum02.github.io/feed.xml" rel="self" type="application/rss+xml"/>
         <language>en-us</language>
-        <lastBuildDate>Sat, 21 Feb 2026 22:05:23 +0000</lastBuildDate>
+        <lastBuildDate>Sun, 22 Feb 2026 18:31:57 +0000</lastBuildDate>
         
         <item>
-            <title>AI for productivity &amp; my heavily opinionated note taking system!</title>
+            <title>Notes as social graph! (+ how I leverage it)</title>
             <link>https://bashketchum02.github.io/posts/memnode.html</link>
-            <description>tldr; I vibe coded my ideal note taking system</description>
-            <pubDate>2026-02-21</pubDate>
+            <description>TL;DR - I vibe coded my ideal note taking system, and it works</description>
+            <pubDate>2026-02-22</pubDate>
             <guid>https://bashketchum02.github.io/posts/memnode.html</guid>
         </item>
     </channel>

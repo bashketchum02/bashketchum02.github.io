@@ -196,13 +196,15 @@ class BlogBuilder:
 
     def generate_toc(self, content: str) -> str:
         """Generate table of contents HTML."""
-        headings = re.findall(r'<h([23])[^>]*id="([^"]+)"[^>]*>(.+?)</h\1>', content)
+        headings = re.findall(r'<h([1234])[^>]*id="([^"]+)"[^>]*>(.+?)</h\1>', content)
         if not headings:
             return ''
 
+        min_level = min(int(h[0]) for h in headings)
         toc_html = '<aside class="toc"><h4 class="toc-title">Contents</h4><ul class="toc-list">'
         for level, slug, text in headings:
-            class_name = 'toc-h3' if level == '3' else ''
+            depth = int(level) - min_level
+            class_name = f'toc-sub' if depth > 0 else ''
             toc_html += f'<li class="{class_name}"><a href="#{slug}">{text}</a></li>'
         toc_html += '</ul></aside>'
         return toc_html
@@ -301,6 +303,10 @@ class BlogBuilder:
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
+    </script>
 </head>
 <body>
     <div class="grain-overlay"></div>
@@ -358,6 +364,13 @@ class BlogBuilder:
 
     <script src="../js/main.js"></script>
     <script>
+        document.querySelectorAll('code.language-mermaid').forEach(function(el) {{
+            var pre = el.parentElement;
+            var div = document.createElement('pre');
+            div.className = 'mermaid';
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        }});
         hljs.highlightAll();
         document.addEventListener("DOMContentLoaded", function() {{
             renderMathInElement(document.body, {{

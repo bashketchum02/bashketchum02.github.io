@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI for productivity &amp; my heavily opinionated note taking system! | Bala</title>
-    <meta name="description" content="tldr; I vibe coded my ideal note taking system">
+    <title>Notes as social graph! (+ how I leverage it) | Bala</title>
+    <meta name="description" content="TL;DR - I vibe coded my ideal note taking system, and it works">
 
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/post.css">
@@ -20,6 +20,10 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
 </head>
 <body>
     <div class="grain-overlay"></div>
@@ -41,23 +45,193 @@
         <article>
             <header class="post-header">
                 <div class="post-meta">
-                    <time class="post-date">2026.02.21</time>
+                    <time class="post-date">2026.02.22</time>
                     <span class="post-category">Productivity</span>
                 </div>
-                <h1 class="post-title">AI for productivity &amp; my heavily opinionated note taking system!</h1>
-                <p class="post-excerpt">tldr; I vibe coded my ideal note taking system</p>
+                <h1 class="post-title">Notes as social graph! (+ how I leverage it)</h1>
+                <p class="post-excerpt">TL;DR - I vibe coded my ideal note taking system, and it works</p>
             </header>
 
             <div class="post-layout">
                 <div class="post-content">
-                    <p>First let&rsquo;s talk about stance on vibe coding, LLMs have come a long way in last 1 year, I went from being heavily skeptical about vibe coding (and AI as a whole) to using it almost everyday for productivity (coding, writing, iterating ideas etc.), wherever its possible to use. Its still not possible to use for systems engineering heavy work that I do for day job all the time, but it certainly helps with redundant tasks, leaving the more exciting parts of software engineering like - thinking about interfaces, API design semantics, architecture nuances and the hardest of them all - <strong>people problems</strong> to my brain.</p>
+                    <h1 id="the-hidden-social-graph-in-engineering-orgs">The hidden social graph in Engineering Orgs</h1>
+<p>Have you ever realized 2 months too late that someone in your org already solved the exact problem you&rsquo;ve been struggling with?</p>
+<p>I&rsquo;ve been thinking a lot about social sciences like economics, politics, and technology policy, and that got me reflecting on how things actually work in large engineering organizations. As I grow in my software engineering career, I increasingly realize that engineers operate inside a social graph. Good engineering does not happen in a vacuum; you need people to get things done, and people need you to get their things done.</p>
+<p>Helping people get things done, knowing the right people to remove blockers, knowing who to approach, and what to prioritize based on conversations. This is the bulk of the engineering problem today. Let&rsquo;s see this through an example:</p>
+<ul>
+<li><strong>Person A</strong> is working on <strong>Platform X</strong></li>
+<li><strong>Platform X</strong> uses <strong>Flink</strong></li>
+<li><strong>Project Y</strong> is owned by <strong>Person B</strong></li>
+<li><strong>Project Y</strong> is considering using <strong>Flink</strong></li>
+<li><strong>Person B</strong> is not aware of <strong>Person A</strong> or <strong>Platform X</strong></li>
+<li><strong>Person C</strong> knows both people (let&rsquo;s say <strong>Person C</strong> is <strong>You</strong>)</li>
+</ul>
+<pre><code class="language-mermaid">graph LR
+    A[Person A] --&gt;|works on| PXY[Platform X]
+    PXY --&gt;|uses| F[Flink]
+    B[Person B] --&gt;|owns| PX[Project Y]
+    PX --&gt;|considering using| F
+    C[&quot;Person C (You)&quot;] --&gt;|knows| A
+    C --&gt;|knows| B
+</code></pre>
+<p>An obvious social structure appears. Now let&rsquo;s say <strong>B</strong> is looking for someone in the company who has prior experience with Flink. You notice that, connect <strong>B</strong> to <strong>A</strong>, and that helps <strong>B</strong> get things done faster.</p>
+<p>This is an isolated example, but in organizations with a large number of engineers, it&rsquo;s hard to keep track of such connections. On top of that, there can be different types of relationships: ownership of projects, reporting structures, 1:1 conversations, meetings, tasks that arise from meetings.</p>
+<p>This creates a very complex social graph. It&rsquo;s not a knowledge graph, because we&rsquo;re not navigating knowledge of things, we&rsquo;re navigating social structure. And it&rsquo;s important to be able to effectively navigate that complexity. (It&rsquo;s entirely possible that I&rsquo;m the only person who struggles with managing context, but oh well!)</p>
+<h1 id="can-we-leverage-this-structure">Can we leverage this structure?</h1>
+<p>Let&rsquo;s look at a slightly more complex scenario. Let&rsquo;s have a log of events that happened (completely fictional events) -</p>
+<ol>
+<li>I saw Person A talk about Tool A. I took a short note of it. I don&rsquo;t really know this person, but I noted the relationship between them and Tool A.</li>
+<li>Months pass by and I&rsquo;ve completely forgotten about it.</li>
+<li>Had a meeting with Team X, and they also use Tool A, but in a different way. I took note of it.</li>
+<li>3 more events happen where Tool A is being used, each time in a different way. I have notes of them all, but I didn&rsquo;t remember that there are several other ways people are using Tool A.</li>
+</ol>
+<p>These are completely isolated events, but they share a common thread: Tool A. There&rsquo;s no standardization of how it&rsquo;s being used, and there&rsquo;s an opportunity to fix that, but it&rsquo;s not easy to recognize!</p>
+<blockquote>
+<p>What if we had a way to automatically index this data and build a social context graph? One that implicitly ties all these isolated events on a common thread?</p>
+</blockquote>
+<p>I looked for such a system in the wild, but the majority of popular tools are designed for navigating knowledge, not social graphs and events. So I set out to build one myself, with very simple goals:</p>
+<ol>
+<li>I should be able to take notes, from which we can find entities and their relationships</li>
+<li>These relationships should be searchable and relevant documents should be retrievable</li>
+<li>We should be able to use AI to get insights and optimize our work based on these social graphs (with as few tokens as possible)</li>
+</ol>
+<h1 id="memnode">Memnode</h1>
+<h2 id="what-it-looks-like">What it looks like</h2>
+<p>Here&rsquo;s what using memnode actually looks like. Let&rsquo;s say we type in our terminal:</p>
+<pre><code>memnode add person:sarah-chen
+</code></pre>
+<p>It opens up a text editor (vim in this case)
+<img alt="Sarah Chen note in vim" src="/images/memnode/sarah.png" /></p>
+<p>Next you type in:</p>
+<pre><code>memnode add project:ingestion-platform
+</code></pre>
+<p>You add some details:
+<img alt="Ingestion platform note" src="/images/memnode/ingestion-plt.png" /></p>
+<p>There are two outcomes:</p>
+<ol>
+<li>Automatic relationship inference (using NER)</li>
+</ol>
+<pre><code>memnode show project:ingestion-platform
+</code></pre>
+<p><img alt="Inferred relationships for ingestion platform" src="/images/memnode/inferred.png" /></p>
+<ol>
+<li>AI agent interface via MCP</li>
+</ol>
+<p><img alt="AI agent querying memnode via MCP" src="/images/memnode/opencode.png" /></p>
+<h2 id="how-it-works">How it works</h2>
+<p>Under the hood, memnode is a markdown-based note-taking service that automatically indexes anything you create through it and stores it in local SQLite. It&rsquo;s then exposed through an MCP server for AI agents to derive insights from. It&rsquo;s as simple as:</p>
+<pre><code class="language-bash"># this opens up an editor for you to take short notes about this person
+memnode add person:A
+# or alternatively
+memnode capture # just a quick note, automatically indexed for you!
+
+# if you want more control
+memnode add person:A
+memnode add project:X
+memnode link person:A project:X --as owns # explicit graph creation
+</code></pre>
+<p>While you edit, memnode watches the file. Once you close it, the contents are indexed by spaCy and TF-IDF to infer entities and relationships. Later, you can talk to your favorite AI agent (Claude Code, Open Code, Claude Desktop, etc.) to converse about your data.</p>
+<h1 id="architecture">Architecture</h1>
+<h2 id="cli-interface">CLI interface</h2>
+<pre><code>memnode add entity:name
+memnode link entity:name entity:name --as relationship
+memnode list
+memnode capture
+memnode 1on1 entity:name
+memnode todo
+</code></pre>
+<p>And many more commands to quickly capture notes and context. A file watcher monitors these changes and automatically indexes them.</p>
+<h2 id="smart-indexing">Smart Indexing</h2>
+<p>NER and TF-IDF infer entity types and their relationships, building graphs from each document you edit: complex relationships between people, projects, tools, and initiatives.</p>
+<h2 id="sqlite-index">SQLite Index</h2>
+<p>All notes and relationships are stored locally in SQLite, keeping everything on your machine.</p>
+<h2 id="mcp-server">MCP Server</h2>
+<p>An MCP server interacts with your index and notes, giving AI agents context on what&rsquo;s going on and what you may need insights on.</p>
+<h2 id="high-level-design">High Level Design</h2>
+<p>Here&rsquo;s a simple diagram of how the system works. You can read more on the <a href="https://github.com/bashketchum02/memnode">Memnode GitHub Repository</a>, along with comprehensive usage documentation.</p>
+<pre><code class="language-mermaid">flowchart LR
+    Notes[Your Notes] --&gt; Indexer[Smart Indexer&lt;br/&gt;NER + TF-IDF]
+    Indexer --&gt; Graph[Social Graph&lt;br/&gt;SQLite]
+    Graph --&gt; MCP[MCP Server]
+    MCP --&gt; AI[AI Agent]
+</code></pre>
+<h1 id="why-do-this-seems-complex">&ldquo;Why do this? Seems complex&rdquo;</h1>
+<blockquote>
+<p>Because we can leverage structure to save tokens &amp; our wallets</p>
+</blockquote>
+<p>The primary reason I&rsquo;ll be using this is to hold a large amount of organizational context in notes, without needing to dump all of it into an AI agent or needing an LLM to find relationships. It lets me leverage the underlying social structure (and save a gazillion dollars in token costs) without needing complex vectorization or ranking. We simply traverse graphs and synthesize information from them.</p>
+<h1 id="why-not-just-use">Why not just use&hellip;</h1>
+<h2 id="obsidian-with-backlinks">Obsidian with backlinks</h2>
+<p>You might wonder: why not just use Obsidian with backlinks? The difference is typed entities and automatic relationship inference. In Obsidian, a link is just a link. In memnode, <code>person:sarah</code> mentioned in <code>project:platform-v2</code> automatically creates a <code>contributes_to</code> relationship that&rsquo;s queryable. You don&rsquo;t manually wire up connections; the system infers them for you.</p>
+<h2 id="crms">CRMs</h2>
+<p>CRMs are structured around deals, pipelines, and customer contacts, a very different mental model. Quick engineering notes about who-knows-what don&rsquo;t fit naturally into a CRM workflow.</p>
+<h2 id="notion">Notion</h2>
+<p>I like Notion, but it doesn&rsquo;t have a straightforward way to handle this use case. There&rsquo;s no automatic relationship inference or typed entity model. I built memnode because it&rsquo;s the most intuitive workflow for myself.</p>
+<h1 id="memnode-vs-rag"><code>memnode</code> vs RAG</h1>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>RAG</th>
+<th>memnode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data structure</td>
+<td>Flat chunks of text + embeddings</td>
+<td>Graph of typed entities + relationships</td>
+</tr>
+<tr>
+<td>Retrieval</td>
+<td>Semantic similarity search</td>
+<td>Graph traversal + relationship queries</td>
+</tr>
+<tr>
+<td>Query</td>
+<td>&ldquo;Find text similar to this query&rdquo;</td>
+<td>&ldquo;Who knows about X?&rdquo;, &ldquo;How are A and B connected?&rdquo;</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>Retrieved chunks dumped into prompt</td>
+<td>Structured context with relationships</td>
+</tr>
+<tr>
+<td>Intelligence</td>
+<td>At query time (LLM does the work)</td>
+<td>At index time (NLP pre-computes relationships)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-core-difference">The Core Difference</h2>
+<pre><code>RAG:
+Query: &quot;Who should I talk to about auth?&quot;
+↓
+Embed query → Search vectors → Return top-k chunks → LLM reads all chunks → LLM figures out answer
+                                    ↓
+                              ~10,000 tokens
+memnode:
+Query: &quot;Who should I talk to about auth?&quot;
+↓
+who_knows_about(&quot;auth&quot;) → Graph traversal → Return person:sarah-chen (knows auth)
+                                    ↓
+                              ~200 tokens
+</code></pre>
+<h2 id="why-this-matters">Why This Matters</h2>
+<ol>
+<li><strong>RAG is dumb retrieval, smart generation.</strong> You retrieve text chunks and hope the LLM can figure out the answer from them.</li>
+<li><strong><code>memnode</code> is smart retrieval, simple generation.</strong> The graph already knows the relationships, so the LLM just needs to format the answer.</li>
+</ol>
+<h1 id="whats-next">What&rsquo;s next</h1>
+<p>Memnode is still early, but I&rsquo;m already using it daily to track context across my org. The roadmap includes better visualization of the social graph, richer MCP tool support, and temporal queries (e.g., &ldquo;what changed since my last 1:1 with Sarah?&rdquo;). If this resonates with you, check out the <a href="https://github.com/bashketchum02/memnode">GitHub repo</a> and give it a try. I&rsquo;d love to hear how others think about this problem.</p>
 
                     <div class="post-tags">
                         <span class="tag">productivity</span><span class="tag">memnode</span>
                     </div>
                 </div>
 
-                
+                <aside class="toc"><h4 class="toc-title">Contents</h4><ul class="toc-list"><li class=""><a href="#the-hidden-social-graph-in-engineering-orgs">The hidden social graph in Engineering Orgs</a></li><li class=""><a href="#can-we-leverage-this-structure">Can we leverage this structure?</a></li><li class=""><a href="#memnode">Memnode</a></li><li class="toc-sub"><a href="#what-it-looks-like">What it looks like</a></li><li class="toc-sub"><a href="#how-it-works">How it works</a></li><li class=""><a href="#architecture">Architecture</a></li><li class="toc-sub"><a href="#cli-interface">CLI interface</a></li><li class="toc-sub"><a href="#smart-indexing">Smart Indexing</a></li><li class="toc-sub"><a href="#sqlite-index">SQLite Index</a></li><li class="toc-sub"><a href="#mcp-server">MCP Server</a></li><li class="toc-sub"><a href="#high-level-design">High Level Design</a></li><li class=""><a href="#why-do-this-seems-complex">&ldquo;Why do this? Seems complex&rdquo;</a></li><li class=""><a href="#why-not-just-use">Why not just use&hellip;</a></li><li class="toc-sub"><a href="#obsidian-with-backlinks">Obsidian with backlinks</a></li><li class="toc-sub"><a href="#crms">CRMs</a></li><li class="toc-sub"><a href="#notion">Notion</a></li><li class=""><a href="#memnode-vs-rag"><code>memnode</code> vs RAG</a></li><li class="toc-sub"><a href="#the-core-difference">The Core Difference</a></li><li class="toc-sub"><a href="#why-this-matters">Why This Matters</a></li><li class=""><a href="#whats-next">What&rsquo;s next</a></li></ul></aside>
             </div>
         </article>
     </main>
@@ -77,6 +251,13 @@
 
     <script src="../js/main.js"></script>
     <script>
+        document.querySelectorAll('code.language-mermaid').forEach(function(el) {
+            var pre = el.parentElement;
+            var div = document.createElement('pre');
+            div.className = 'mermaid';
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        });
         hljs.highlightAll();
         document.addEventListener("DOMContentLoaded", function() {
             renderMathInElement(document.body, {
