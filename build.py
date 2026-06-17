@@ -41,7 +41,7 @@ class BlogBuilder:
         self.posts = []
         self.site_name = "Bala"
         self.site_url = "https://bashketchum02.github.io"
-        self.site_description = "Notes on Machine Learning & Systems"
+        self.site_description = "Bala's notes on engineering, economics, policy, and complex systems."
 
     def parse_front_matter(self, content: str) -> tuple[dict, str]:
         """Extract YAML front matter from markdown content."""
@@ -295,7 +295,7 @@ class BlogBuilder:
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -319,7 +319,7 @@ class BlogBuilder:
             </a>
             <div class="nav-links">
                 <a href="../index.html" class="nav-link active">Writing</a>
-                                <a href="../about.html" class="nav-link">About</a>
+                <a href="../about.html" class="nav-link">About</a>
             </div>
         </nav>
     </header>
@@ -353,6 +353,7 @@ class BlogBuilder:
         <div class="footer-content">
             <div class="footer-left">
                 <p class="footer-copyright">© {datetime.now().year} {self.site_name}</p>
+                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
@@ -455,11 +456,11 @@ class BlogBuilder:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{self.site_name} | ML Research & Engineering</title>
+    <title>{self.site_name}</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="grain-overlay"></div>
@@ -472,7 +473,7 @@ class BlogBuilder:
             </a>
             <div class="nav-links">
                 <a href="index.html" class="nav-link active">Writing</a>
-                                <a href="about.html" class="nav-link">About</a>
+                <a href="about.html" class="nav-link">About</a>
             </div>
         </nav>
     </header>
@@ -480,32 +481,25 @@ class BlogBuilder:
     <main class="main-content">
         <section class="hero">
             <div class="hero-content">
-                <p class="hero-tagline">Notes on</p>
-                <h1 class="hero-title">Engineering, Machine Learning<br><span class="hero-accent">&</span> Developer Productivity</h1>
+                <p class="hero-tagline">Hi, I am Bala.</p>
+                <h1 class="hero-title">I like engineering, economics, policy, and complex systems.</h1>
                 <p class="hero-description">
-                    Some things about tech world, some things about philosophy and side-quests.
+                    Not just software systems. Markets, institutions, organizations, incentives, cities, platforms, people. Engineering is how I express my love for systems.
                 </p>
             </div>
-            <div class="hero-decoration">
-                <svg viewBox="0 0 200 200" class="hero-svg">
-                    <defs>
-                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:var(--accent);stop-opacity:0.3" />
-                            <stop offset="100%" style="stop-color:var(--accent-secondary);stop-opacity:0.1" />
-                        </linearGradient>
-                    </defs>
-                    <circle cx="100" cy="100" r="80" fill="none" stroke="url(#grad1)" stroke-width="0.5"/>
-                    <circle cx="100" cy="100" r="60" fill="none" stroke="var(--accent)" stroke-width="0.3" stroke-dasharray="2 4"/>
-                    <circle cx="100" cy="100" r="40" fill="none" stroke="var(--text-muted)" stroke-width="0.2"/>
-                    <path d="M 100 20 Q 140 100 100 180 Q 60 100 100 20" fill="none" stroke="var(--accent)" stroke-width="0.5" opacity="0.6"/>
-                    <path d="M 20 100 Q 100 60 180 100 Q 100 140 20 100" fill="none" stroke="var(--accent-secondary)" stroke-width="0.5" opacity="0.4"/>
-                </svg>
+            <div class="hero-aside">
+                <p class="aside-kicker">Now</p>
+                <ul class="topic-list">
+                    <li>building ML infrastructure at <a href="https://www.grab.com/" target="_blank" rel="noopener">Grab</a></li>
+                    <li>thinking about social sciences, especially economics and policy</li>
+                    <li>previously: wizard wearing many hats</li>
+                </ul>
             </div>
         </section>
 
         <section class="posts-section">
             <div class="section-header">
-                <h2 class="section-title">Recent Writing</h2>
+                <h2 class="section-title">Writing</h2>
                 <div class="section-line"></div>
             </div>
 
@@ -516,7 +510,7 @@ class BlogBuilder:
             </div>
 
             <a href="archive.html" class="view-all">
-                View all posts
+                Browse the archive
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -528,7 +522,7 @@ class BlogBuilder:
         <div class="footer-content">
             <div class="footer-left">
                 <p class="footer-copyright">© {datetime.now().year} {self.site_name}</p>
-                <p class="footer-note">Built with curiosity and caffeine</p>
+                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">GitHub</a>
@@ -598,7 +592,7 @@ class BlogBuilder:
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="grain-overlay"></div>
@@ -611,7 +605,7 @@ class BlogBuilder:
             </a>
             <div class="nav-links">
                 <a href="index.html" class="nav-link active">Writing</a>
-                                <a href="about.html" class="nav-link">About</a>
+                <a href="about.html" class="nav-link">About</a>
             </div>
         </nav>
     </header>
@@ -620,7 +614,7 @@ class BlogBuilder:
         <section class="archive-section">
             <header class="page-header">
                 <h1 class="page-title">Archive</h1>
-                <p class="page-description">All posts, organized by year.</p>
+                <p class="page-description">Everything published here, newest first.</p>
             </header>
             {years_html}
         </section>
@@ -630,7 +624,7 @@ class BlogBuilder:
         <div class="footer-content">
             <div class="footer-left">
                 <p class="footer-copyright">© {datetime.now().year} {self.site_name}</p>
-                <p class="footer-note">Built with curiosity and caffeine</p>
+                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">GitHub</a>
@@ -641,23 +635,6 @@ class BlogBuilder:
     </footer>
 
     <script src="js/main.js"></script>
-
-    <style>
-        .archive-section {{ max-width: 800px; margin: 0 auto; }}
-        .page-header {{ margin-bottom: var(--space-4xl); padding-bottom: var(--space-2xl); border-bottom: 1px solid var(--border-light); }}
-        .page-title {{ font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 500; margin-bottom: var(--space-md); }}
-        .page-description {{ font-size: var(--text-lg); color: var(--text-secondary); }}
-        .archive-year {{ margin-bottom: var(--space-3xl); }}
-        .year-heading {{ font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--border-light); }}
-        .archive-list {{ list-style: none; padding: 0; }}
-        .archive-item {{ display: grid; grid-template-columns: 70px 1fr auto; gap: var(--space-lg); align-items: baseline; padding: var(--space-md) 0; border-bottom: 1px solid var(--border-light); }}
-        .archive-item:last-child {{ border-bottom: none; }}
-        .archive-date {{ font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text-muted); }}
-        .archive-title {{ font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; transition: color var(--transition-fast); }}
-        .archive-title:hover {{ color: var(--accent); }}
-        .archive-category {{ font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }}
-        @media (max-width: 600px) {{ .archive-item {{ grid-template-columns: 1fr; gap: var(--space-xs); }} .archive-category {{ display: none; }} }}
-    </style>
 </body>
 </html>'''
 
@@ -686,7 +663,7 @@ class BlogBuilder:
         rss = f'''<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>{self.site_name} - ML Research & Engineering</title>
+        <title>{self.site_name}</title>
         <link>{self.site_url}</link>
         <description>{self.site_description}</description>
         <atom:link href="{self.site_url}/feed.xml" rel="self" type="application/rss+xml"/>

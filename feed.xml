@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>Bala - ML Research & Engineering</title>
+        <title>Bala</title>
         <link>https://bashketchum02.github.io</link>
-        <description>Notes on Machine Learning & Systems</description>
+        <description>Bala's notes on engineering, economics, policy, and complex systems.</description>
         <atom:link href="https://bashketchum02.github.io/feed.xml" rel="self" type="application/rss+xml"/>
         <language>en-us</language>
-        <lastBuildDate>Sun, 22 Feb 2026 18:31:57 +0000</lastBuildDate>
+        <lastBuildDate>Wed, 17 Jun 2026 23:33:42 +0000</lastBuildDate>
         
         <item>
-            <title>Notes as social graph! (+ how I leverage it)</title>
+            <title>Notes as a social graph</title>
             <link>https://bashketchum02.github.io/posts/memnode.html</link>
-            <description>TL;DR - I vibe coded my ideal note taking system, and it works</description>
+            <description>A note-taking system for tracking people, projects, and relationships across engineering work.</description>
             <pubDate>2026-02-22</pubDate>
             <guid>https://bashketchum02.github.io/posts/memnode.html</guid>
         </item>

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="grain-overlay"></div>
@@ -20,64 +20,25 @@
             </a>
             <div class="nav-links">
                 <a href="index.html" class="nav-link">Writing</a>
-                                <a href="about.html" class="nav-link active">About</a>
+                <a href="about.html" class="nav-link active">About</a>
             </div>
         </nav>
     </header>
 
     <main class="main-content">
         <section class="about-section">
-            <div class="about-header">
-                <div class="about-avatar">
-                    <span class="avatar-letter">B</span>
-                </div>
-                <div class="about-intro">
-                    <h1 class="about-name">Bala</h1>
-                    <p class="about-title">Engineer for Engineers</p>
-                </div>
-            </div>
+            <header class="about-header">
+                <p class="about-eyebrow">About</p>
+                <h1 class="about-name">Bala</h1>
+                <p class="about-lead">
+                    Links, contact, and the usual disclaimer.
+                </p>
+            </header>
 
             <div class="about-content">
-                <p class="about-lead">
-                    I care about engineering and enabling others to engineer at scale.
-                </p>
-
                 <p>
-                    My goal is to make AI/ML development fast, accurate & reliable with little to no friction. This includes building petabyte scale streaming platforms, microservices, hacking kubernetes manifests to writing CLI tools & making react dashboards.
+                    I currently work at <a href="https://www.grab.com/" target="_blank" rel="noopener">Grab</a>. Everything here is personal and does not represent my employer.
                 </p>
-
-                <h2>Interests</h2>
-
-                <ul class="interests-list">
-                    <li>
-                        <span class="interest-icon">⚙</span>
-                        <div class="interest-content">
-                            <strong>MLOps & Infrastructure</strong>
-                            <p><b>Developer velocity</b> but for ML practitioners.</p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="interest-icon">∇</span>
-                        <div class="interest-content">
-                            <strong>Distributed Systems and Optimization</strong>
-                            <p>One machine is never enough, am I right?</p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="interest-icon">⊗</span>
-                        <div class="interest-content">
-                            <strong>Low-level Vision and Efficient Architectures</strong>
-                            <p>When does it become impossible to improve certain algorithms without spamming attention on every layer?</p>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="interest-icon">§</span>
-                        <div class="interest-content">
-                            <strong>Puzzles and Algorithms</strong>
-                            <p>Pretty old school stuff, but I still enjoy solving them.</p>
-                        </div>
-                    </li>
-                </ul>
 
                 <h2>Elsewhere</h2>
 
@@ -99,14 +60,7 @@
                 <h2>Contact</h2>
 
                 <p>
-                    The best way to reach me is via email at
-                    <a href="mailto:bashketchum02@proton.me">bashketchum02@proton.me</a>.
-                    I read everything, though responses may be slow.
-                </p>
-
-                <p>
-                    For academic collaborations or speaking inquiries, please include
-                    relevant context in your initial message.
+                    Email: <a href="mailto:bashketchum02@proton.me">bashketchum02@proton.me</a>.
                 </p>
             </div>
         </section>
@@ -116,7 +70,7 @@
         <div class="footer-content">
             <div class="footer-left">
                 <p class="footer-copyright">© 2026 Bala</p>
-                <p class="footer-note">Built with curiosity and caffeine</p>
+                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">GitHub</a>
@@ -127,161 +81,5 @@
     </footer>
 
     <script src="js/main.js"></script>
-
-    <style>
-        /* About page specific styles */
-        .about-section {
-            max-width: 720px;
-            margin: 0 auto;
-        }
-
-        .about-header {
-            display: flex;
-            align-items: center;
-            gap: var(--space-xl);
-            margin-bottom: var(--space-3xl);
-            padding-bottom: var(--space-2xl);
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .about-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--accent-tertiary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .avatar-letter {
-            font-family: var(--font-display);
-            font-size: var(--text-4xl);
-            color: white;
-            font-weight: 500;
-        }
-
-        .about-name {
-            font-family: var(--font-display);
-            font-size: var(--text-4xl);
-            font-weight: 500;
-            margin-bottom: var(--space-xs);
-        }
-
-        .about-title {
-            font-family: var(--font-mono);
-            font-size: var(--text-sm);
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .about-content h2 {
-            font-family: var(--font-display);
-            font-size: var(--text-2xl);
-            font-weight: 500;
-            margin-top: var(--space-3xl);
-            margin-bottom: var(--space-lg);
-        }
-
-        .about-lead {
-            font-size: var(--text-xl);
-            line-height: 1.7;
-            color: var(--text-secondary);
-            margin-bottom: var(--space-xl);
-        }
-
-        .about-content p {
-            font-size: var(--text-lg);
-            line-height: 1.8;
-            margin-bottom: var(--space-lg);
-        }
-
-        .about-content a {
-            color: var(--accent);
-            text-decoration: underline;
-            text-underline-offset: 3px;
-        }
-
-        .interests-list {
-            list-style: none;
-            padding: 0;
-            display: grid;
-            gap: var(--space-lg);
-        }
-
-        .interests-list li {
-            display: flex;
-            gap: var(--space-lg);
-            padding: var(--space-lg);
-            background: var(--bg-secondary);
-            border-radius: 4px;
-        }
-
-        .interest-icon {
-            font-size: var(--text-2xl);
-            color: var(--accent);
-            flex-shrink: 0;
-            width: 40px;
-            text-align: center;
-        }
-
-        .interest-content strong {
-            display: block;
-            margin-bottom: var(--space-xs);
-        }
-
-        .interest-content p {
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        .links-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--space-md);
-        }
-
-        .link-card {
-            display: flex;
-            flex-direction: column;
-            padding: var(--space-lg);
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-light);
-            border-radius: 4px;
-            text-decoration: none;
-            transition: all var(--transition-base);
-        }
-
-        .link-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
-
-        .link-name {
-            font-family: var(--font-display);
-            font-size: var(--text-lg);
-            font-weight: 500;
-            margin-bottom: var(--space-xs);
-        }
-
-        .link-desc {
-            font-size: var(--text-sm);
-            color: var(--text-muted);
-        }
-
-        @media (max-width: 600px) {
-            .about-header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .links-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </body>
 </html>

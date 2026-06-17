@@ -1,9 +1,9 @@
 ---
-title: Notes as social graph! (+ how I leverage it)
+title: Notes as a social graph
 date: 2026-02-22
-category: Productivity 
-tags: [productivity, memnode]
-excerpt: TL;DR - I vibe coded my ideal note taking system, and it works
+category: Engineering
+tags: [engineering, memnode]
+excerpt: A note-taking system for tracking people, projects, and relationships across engineering work.
 ---
 # The hidden social graph in Engineering Orgs
 Have you ever realized 2 months too late that someone in your org already solved the exact problem you've been struggling with?
