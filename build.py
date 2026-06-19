@@ -295,7 +295,7 @@ class BlogBuilder:
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -460,7 +460,7 @@ class BlogBuilder:
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="grain-overlay"></div>
@@ -483,9 +483,6 @@ class BlogBuilder:
             <div class="hero-content">
                 <p class="hero-tagline">Hi, I am Bala.</p>
                 <h1 class="hero-title">I like engineering, economics, policy, and complex systems.</h1>
-                <p class="hero-description">
-                    Not just software systems. Markets, institutions, organizations, incentives, cities, platforms, people. Engineering is how I express my love for systems.
-                </p>
             </div>
             <div class="hero-aside">
                 <p class="aside-kicker">Now</p>
@@ -592,7 +589,7 @@ class BlogBuilder:
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=Source+Sans+3:wght@400;520;650&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="grain-overlay"></div>
