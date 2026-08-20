@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>builder&#x27;s block | Bala</title>
+    <meta name="description" content="learning to fill a blank screen, again">
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/post.css">
+    <link rel="stylesheet" href="../css/syntax.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    <div class="grain-overlay"></div>
+
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="../index.html" class="logo">
+                <span class="logo-symbol">λ</span>
+                <span class="logo-text">bala</span>
+            </a>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link active">Writing</a>
+                <a href="../about.html" class="nav-link">About</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <article>
+            <header class="post-header">
+                <div class="post-meta">
+                    <time class="post-date">2026.08.20</time>
+                    <span class="post-category">Engineering</span>
+                </div>
+                <h1 class="post-title">builder&#x27;s block</h1>
+                <p class="post-excerpt">learning to fill a blank screen, again</p>
+            </header>
+
+            <div class="post-layout">
+                <div class="post-content">
+                    <h1 id="the-art-of-shortest-path">the art of shortest path</h1>
+<p>I am naturally a lazy person, which always made me search for the most minimal solution for the problems I am solving. When I solved an engineering problem, my goal was
+always elegance and almost never &ldquo;just get it done&rdquo;. This is a good skill to have, because good software is supposed to be as simple as possible, as complex as necessary 
+(sorry Jensen Huang for stealing your line), because a simpler program is easier to extend, easier to explain and easier to write.</p>
+<p>This has become a double edged sword, the intuition that helped me develop the skill of pinpointing the most minimal surface to solve a problem is the same intuition that is slowly
+driving me to become lazier and lazier. I was always good at filling up blank pages, but I always took shortest path to get there, but I think this needs to stop now. </p>
+<h1 id="the-art-of-filling-a-blank-page">the art of filling a blank page</h1>
+<p>My ability to fill a blank page is slowly withering away, because everytime I look at one, my brain goes - &ldquo;ugh, please ask an agent to fill most of it, you can just review&rdquo;,
+and honestly I take that advice from my brain 9/10 times. But I realize, it was not always this way. There was a time, when I used to do majority of the early draft, the
+thinking, the interface design, the contract, and let the agents do the refinement. But slowly, I seem to have taken a back seat, and its taking the life out of the builder in me.</p>
+<p>I am suffering from what I shall call a &ldquo;builder&rsquo;s block&rdquo;, I am sure I have not lost the ability to read or write good programs and build software, but I have somewhat lost the ability to
+do it from scratch, and I attribute it completely to discipline.</p>
+<h1 id="what-now">what now?</h1>
+<p>This stops, today. I have decided to ritualize my workflow, and have strict discipline on when to and when not to use AI, and which parts I really need to hand of to AI for productivity,
+and not blindly rely on it to do majority of the work. Hopefully I will write an update on it soon.</p>
+<blockquote>
+<p>Note: I wrote this post from scratch, this was good practice, thanks for reading!</p>
+</blockquote>
+
+                    <div class="post-tags">
+                        <span class="tag">engineering</span><span class="tag">life</span>
+                    </div>
+                </div>
+
+                <aside class="toc"><h4 class="toc-title">Contents</h4><ul class="toc-list"><li class=""><a href="#the-art-of-shortest-path">the art of shortest path</a></li><li class=""><a href="#the-art-of-filling-a-blank-page">the art of filling a blank page</a></li><li class=""><a href="#what-now">what now?</a></li></ul></aside>
+            </div>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="footer-copyright">© 2026 Bala</p>
+                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
+                <a href="https://x.com/bashketchum02" class="footer-link">X</a>
+                <a href="../feed.xml" class="footer-link">RSS</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        document.querySelectorAll('code.language-mermaid').forEach(function(el) {
+            var pre = el.parentElement;
+            var div = document.createElement('pre');
+            div.className = 'mermaid';
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        });
+        hljs.highlightAll();
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+</body>
+</html>
