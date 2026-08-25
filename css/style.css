@@ -23,6 +23,7 @@
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
     --text-base: 1rem;
+    --text-md-sm: 1.125rem;
     --text-md: 1.375rem;
     --text-lg: 2.25rem;
     --text-xl: 3.25rem;
@@ -207,7 +208,7 @@ img {
 
 .directory-head {
     display: grid;
-    grid-template-columns: 84px 130px minmax(0, 1fr) 64px;
+    grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
     gap: var(--space-lg);
     align-items: baseline;
     padding: var(--space-sm) var(--space-md);
@@ -225,7 +226,7 @@ img {
 
 .directory-item {
     display: grid;
-    grid-template-columns: 84px 130px minmax(0, 1fr) 64px;
+    grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
     gap: var(--space-lg);
     align-items: baseline;
     padding: var(--space-md) var(--space-md);
@@ -256,7 +257,7 @@ img {
 
 .directory-title {
     font-family: var(--font-mono);
-    font-size: var(--text-md);
+    font-size: var(--text-md-sm);
     font-weight: 600;
     letter-spacing: var(--tracking-md);
     line-height: var(--leading-snug);
@@ -415,6 +416,38 @@ img {
 }
 
 /* ===== Responsive Design ===== */
+@media (max-width: 860px) {
+    .directory-head {
+        display: none;
+    }
+
+    .directory-item {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "title title"
+            "date read";
+        gap: var(--space-xs) var(--space-md);
+    }
+
+    .directory-title {
+        grid-area: title;
+        font-size: var(--text-base);
+    }
+
+    .directory-date {
+        grid-area: date;
+    }
+
+    .directory-read {
+        grid-area: read;
+        text-align: left;
+    }
+
+    .directory-category {
+        display: none;
+    }
+}
+
 @media (max-width: 700px) {
     .main-content {
         padding-left: var(--space-md);
@@ -434,20 +467,6 @@ img {
     .home-hero img {
         width: 180px;
         height: 180px;
-    }
-
-    .directory-head,
-    .directory-item {
-        grid-template-columns: 64px minmax(0, 1fr) auto;
-        gap: var(--space-md);
-    }
-
-    .directory-category {
-        display: none;
-    }
-
-    .directory-head .directory-category {
-        display: none;
     }
 
     .links-grid a {
