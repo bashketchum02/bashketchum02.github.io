@@ -1,25 +1,24 @@
-/* ===== Syntax Highlighting Theme ===== */
-/* Vibrant indigo-tinted syntax theme */
+/* ===== Syntax Highlighting ===== */
+/* Tuned for the dark code surface (#14120b) used by .post-content pre */
 
-/* Base token colors */
 .hljs {
     display: block;
     overflow-x: auto;
-    color: var(--text-primary);
+    color: #edecec;
     background: transparent;
 }
 
 /* Comments */
 .hljs-comment,
 .hljs-quote {
-    color: #8888A0;
+    color: #7d7a6e;
     font-style: italic;
 }
 
 /* Keywords */
 .hljs-keyword,
 .hljs-selector-tag {
-    color: #4F46E5;
+    color: #ed8559;
 }
 
 /* Strings */
@@ -27,7 +26,7 @@
 .hljs-doctag,
 .hljs-regexp,
 .hljs-meta .hljs-string {
-    color: #059669;
+    color: #8fb573;
 }
 
 /* Numbers */
@@ -36,7 +35,7 @@
 .hljs-variable,
 .hljs-template-variable,
 .hljs-tag .hljs-attr {
-    color: #D97706;
+    color: #e3b04b;
 }
 
 /* Functions */
@@ -45,7 +44,7 @@
 .hljs-name,
 .hljs-selector-id,
 .hljs-selector-class {
-    color: #7C3AED;
+    color: #d9a1d0;
     font-weight: 500;
 }
 
@@ -53,7 +52,7 @@
 .hljs-type,
 .hljs-class .hljs-title,
 .hljs-built_in {
-    color: #DB2777;
+    color: #7fb3d6;
 }
 
 /* Attributes and Properties */
@@ -62,19 +61,19 @@
 .hljs-bullet,
 .hljs-subst,
 .hljs-meta {
-    color: #2563EB;
+    color: #a08fd0;
 }
 
 /* Deletion */
 .hljs-deletion {
-    color: #DC2626;
-    background: rgba(220, 38, 38, 0.08);
+    color: #e07a7a;
+    background: rgba(224, 122, 122, 0.12);
 }
 
 /* Addition */
 .hljs-addition {
-    color: #059669;
-    background: rgba(5, 150, 105, 0.08);
+    color: #8fb573;
+    background: rgba(143, 181, 115, 0.12);
 }
 
 /* Emphasis */
@@ -92,66 +91,6 @@
     text-decoration: underline;
 }
 
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-    .hljs-comment,
-    .hljs-quote {
-        color: #6B6B88;
-    }
-
-    .hljs-keyword,
-    .hljs-selector-tag {
-        color: #A78BFA;
-    }
-
-    .hljs-string,
-    .hljs-doctag,
-    .hljs-regexp,
-    .hljs-meta .hljs-string {
-        color: #34D399;
-    }
-
-    .hljs-number,
-    .hljs-literal,
-    .hljs-variable,
-    .hljs-template-variable,
-    .hljs-tag .hljs-attr {
-        color: #FCD34D;
-    }
-
-    .hljs-title,
-    .hljs-section,
-    .hljs-name,
-    .hljs-selector-id,
-    .hljs-selector-class {
-        color: #C4B5FD;
-    }
-
-    .hljs-type,
-    .hljs-class .hljs-title,
-    .hljs-built_in {
-        color: #F9A8D4;
-    }
-
-    .hljs-attribute,
-    .hljs-symbol,
-    .hljs-bullet,
-    .hljs-subst,
-    .hljs-meta {
-        color: #7DD3FC;
-    }
-
-    .hljs-deletion {
-        color: #FCA5A5;
-        background: rgba(252, 165, 165, 0.1);
-    }
-
-    .hljs-addition {
-        color: #34D399;
-        background: rgba(52, 211, 153, 0.1);
-    }
-}
-
 /* Line numbers for code blocks */
 .line-numbers {
     counter-reset: line;
@@ -164,7 +103,7 @@
     width: 2em;
     margin-right: 1em;
     text-align: right;
-    color: var(--text-muted);
+    color: #7d7a6e;
     font-size: 0.85em;
     user-select: none;
 }
@@ -173,7 +112,7 @@
 .diff .hljs-deletion,
 .diff .deletion {
     display: block;
-    background: rgba(220, 38, 38, 0.08);
+    background: rgba(224, 122, 122, 0.12);
     margin: 0 calc(-1 * var(--space-xl));
     padding: 0 var(--space-xl);
 }
@@ -181,19 +120,7 @@
 .diff .hljs-addition,
 .diff .addition {
     display: block;
-    background: rgba(5, 150, 105, 0.08);
+    background: rgba(143, 181, 115, 0.12);
     margin: 0 calc(-1 * var(--space-xl));
     padding: 0 var(--space-xl);
-}
-
-@media (prefers-color-scheme: dark) {
-    .diff .hljs-deletion,
-    .diff .deletion {
-        background: rgba(252, 165, 165, 0.08);
-    }
-
-    .diff .hljs-addition,
-    .diff .addition {
-        background: rgba(52, 211, 153, 0.08);
-    }
 }

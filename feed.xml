@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>Bala</title>
+        <title>bashketchum02</title>
         <link>https://bashketchum02.github.io</link>
-        <description>Bala's notes on engineering, economics, policy, and complex systems.</description>
+        <description>bashketchum02 builds ML infrastructure and likes social sciences.</description>
         <atom:link href="https://bashketchum02.github.io/feed.xml" rel="self" type="application/rss+xml"/>
         <language>en-us</language>
-        <lastBuildDate>Fri, 21 Aug 2026 00:36:35 +0000</lastBuildDate>
+        <lastBuildDate>Tue, 25 Aug 2026 18:36:02 +0000</lastBuildDate>
         
         <item>
-            <title>builder&#x27;s block</title>
-            <link>https://bashketchum02.github.io/posts/builders_block.html</link>
-            <description>learning to fill a blank screen, again</description>
+            <title>tasteful engineering</title>
+            <link>https://bashketchum02.github.io/posts/coding_art_form.html</link>
+            <description>writing code for fun AND profit, should be considered separate acts</description>
             <pubDate>2026-08-20</pubDate>
-            <guid>https://bashketchum02.github.io/posts/builders_block.html</guid>
+            <guid>https://bashketchum02.github.io/posts/coding_art_form.html</guid>
         </item>
     </channel>
 </rss>

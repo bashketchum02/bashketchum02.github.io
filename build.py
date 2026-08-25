@@ -3,7 +3,7 @@
 Blog Build Script
 
 A simple static site generator that converts markdown posts to HTML
-and automatically updates the index, archive, and RSS feed.
+and automatically updates the content-first index and RSS feed.
 
 Usage:
     python build.py              # Build all posts
@@ -34,14 +34,57 @@ except ImportError:
     print("Note: Install python-markdown for better rendering: pip install markdown")
 
 
+FONTS_LINK = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+    '    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+    '    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700'
+    '&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">'
+)
+
+
+POST_HEAD_EXTRAS = (
+    '\n    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">'
+    '\n    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">'
+)
+
+# Loaded at the end of post pages; definition order guarantees our CSS/JS still win.
+POST_SCRIPTS = '''
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+    <script>
+        document.querySelectorAll("code.language-mermaid").forEach(function(el) {
+            var pre = el.parentElement;
+            var div = document.createElement("pre");
+            div.className = "mermaid";
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        });
+        hljs.highlightAll();
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+        });
+    </script>'''
+
+
 class BlogBuilder:
     def __init__(self, source_dir: str = "posts", output_dir: str = "posts"):
         self.source_dir = Path(source_dir)
         self.output_dir = Path(output_dir)
         self.posts = []
-        self.site_name = "Bala"
+        self.site_name = "bashketchum02"
         self.site_url = "https://bashketchum02.github.io"
-        self.site_description = "Bala's notes on engineering, economics, policy, and complex systems."
+        self.site_description = "bashketchum02 builds ML infrastructure and likes social sciences."
 
     def parse_front_matter(self, content: str) -> tuple[dict, str]:
         """Extract YAML front matter from markdown content."""
@@ -194,6 +237,13 @@ class BlogBuilder:
         text = re.sub(r'\s+', '-', text)
         return text.strip('-')
 
+    def reading_time(self, text: str) -> int:
+        """Estimate reading time in minutes from body text."""
+        text = re.sub(r'```.*?```', ' ', text, flags=re.DOTALL)
+        text = re.sub(r'\$\$.+?\$\$', ' ', text, flags=re.DOTALL)
+        words = len(text.split())
+        return max(1, round(words / 225))
+
     def generate_toc(self, content: str) -> str:
         """Generate table of contents HTML."""
         headings = re.findall(r'<h([1234])[^>]*id="([^"]+)"[^>]*>(.+?)</h\1>', content)
@@ -229,6 +279,64 @@ class BlogBuilder:
                 return date
         return str(date)
 
+    def page_head(self, title: str, prefix: str, description: str = "", head_extras: str = "") -> str:
+        """Shared HTML head for generated pages."""
+        desc = f'    <meta name="description" content="{self.escape_html(description)}">\n' if description else ''
+        return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+{desc}    <link rel="icon" type="image/svg+xml" href="{prefix}images/intro.svg">
+    <link rel="stylesheet" href="{prefix}css/style.css">
+    <link rel="stylesheet" href="{prefix}css/post.css">
+    <link rel="stylesheet" href="{prefix}css/syntax.css">
+
+    {FONTS_LINK}{head_extras}
+</head>
+<body>
+'''
+
+    def render_header(self, prefix: str, active: str) -> str:
+        """Shared site header + open main. active in {'writing','about'}."""
+        writing_active = ' class="nav-link active"' if active == 'writing' else ' class="nav-link"'
+        about_active = ' class="nav-link active"' if active == 'about' else ' class="nav-link"'
+        return f'''    <header class="site-header">
+        <nav class="nav-container">
+            <a href="{prefix}index.html" class="logo">bashketchum02</a>
+            <div class="nav-links">
+                <a href="{prefix}index.html"{writing_active}>Writing</a>
+                <a href="{prefix}about.html"{about_active}>About</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+'''
+
+    def render_footer(self, prefix: str) -> str:
+        """Close main + shared footer + scripts."""
+        return f'''    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="footer-copyright">&copy; {datetime.now().year} {self.site_name}</p>
+                <p class="footer-note">ml infrastructure &middot; social sciences</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
+                <a href="https://x.com/bashketchum02" class="footer-link">X</a>
+                <a href="{prefix}feed.xml" class="footer-link">RSS</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{prefix}js/main.js"></script>
+</body>
+</html>'''
+
     def render_post(self, md_path: Path) -> Optional[dict]:
         """Render a single markdown post to HTML."""
         with open(md_path, 'r', encoding='utf-8') as f:
@@ -249,6 +357,9 @@ class BlogBuilder:
         # Generate TOC
         toc_html = self.generate_toc(html_content)
 
+        # Reading time from raw body
+        front_matter['read_min'] = self.reading_time(body)
+
         # Build the full HTML page
         post_html = self.build_post_page(front_matter, html_content, toc_html)
 
@@ -267,6 +378,7 @@ class BlogBuilder:
             'category': front_matter.get('category', 'General'),
             'tags': front_matter.get('tags', []),
             'excerpt': front_matter.get('excerpt', ''),
+            'read_min': front_matter.get('read_min', 1),
             'slug': md_path.stem,
             'path': f'posts/{output_filename}',
         }
@@ -278,58 +390,17 @@ class BlogBuilder:
         category = meta.get('category', 'General')
         excerpt = meta.get('excerpt', '')
         tags = meta.get('tags', [])
+        read_min = meta.get('read_min', 1)
 
         tags_html = ''.join(f'<span class="tag">{tag}</span>' for tag in tags)
 
-        return f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{self.escape_html(title)} | {self.site_name}</title>
-    <meta name="description" content="{self.escape_html(excerpt)}">
-
-    <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/post.css">
-    <link rel="stylesheet" href="../css/syntax.css">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
-    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
-    </script>
-</head>
-<body>
-    <div class="grain-overlay"></div>
-
-    <header class="site-header">
-        <nav class="nav-container">
-            <a href="../index.html" class="logo">
-                <span class="logo-symbol">λ</span>
-                <span class="logo-text">bala</span>
-            </a>
-            <div class="nav-links">
-                <a href="../index.html" class="nav-link active">Writing</a>
-                <a href="../about.html" class="nav-link">About</a>
-            </div>
-        </nav>
-    </header>
-
-    <main class="main-content">
-        <article>
+        html = f'''{self.page_head(f"{self.escape_html(title)} | {self.site_name}", "../", excerpt, POST_HEAD_EXTRAS)}
+{self.render_header("../", "writing")}        <article>
             <header class="post-header">
                 <div class="post-meta">
                     <time class="post-date">{date}</time>
                     <span class="post-category">{category}</span>
+                    <span class="post-read">{read_min} min read</span>
                 </div>
                 <h1 class="post-title">{self.escape_html(title)}</h1>
                 <p class="post-excerpt">{self.escape_html(excerpt)}</p>
@@ -347,44 +418,14 @@ class BlogBuilder:
                 {toc}
             </div>
         </article>
-    </main>
+{self.render_footer("../")}'''
 
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-left">
-                <p class="footer-copyright">© {datetime.now().year} {self.site_name}</p>
-                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
-            </div>
-            <div class="footer-links">
-                <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
-                <a href="https://x.com/bashketchum02" class="footer-link">X</a>
-                <a href="../feed.xml" class="footer-link">RSS</a>
-            </div>
-        </div>
-    </footer>
-
-    <script src="../js/main.js"></script>
-    <script>
-        document.querySelectorAll('code.language-mermaid').forEach(function(el) {{
-            var pre = el.parentElement;
-            var div = document.createElement('pre');
-            div.className = 'mermaid';
-            div.textContent = el.textContent;
-            pre.parentNode.replaceChild(div, pre);
-        }});
-        hljs.highlightAll();
-        document.addEventListener("DOMContentLoaded", function() {{
-            renderMathInElement(document.body, {{
-                delimiters: [
-                    {{left: '$$', right: '$$', display: true}},
-                    {{left: '$', right: '$', display: false}}
-                ],
-                throwOnError: false
-            }});
-        }});
-    </script>
-</body>
-</html>'''
+        # Inject post-only scripts before </body>
+        html = html.replace(
+            '<script src="../js/main.js"></script>',
+            '<script src="../js/main.js"></script>' + POST_SCRIPTS,
+        )
+        return html
 
     def build_all(self):
         """Build all markdown posts."""
@@ -408,236 +449,47 @@ class BlogBuilder:
         print(f"\nBuilt {len(self.posts)} posts")
 
     def generate_index(self):
-        """Generate the index.html with recent posts."""
+        """Generate the index.html content-first directory of all posts."""
         if not self.posts:
             print("No posts to include in index")
             return
 
         print("Generating index.html...")
 
-        # Featured post (most recent)
-        featured = self.posts[0] if self.posts else None
+        items = ''
+        for post in self.posts:
+            items += f'''
+            <a href="{post['path']}" class="directory-item">
+                <time class="directory-date">{post['date_display']}</time>
+                <span class="directory-category">{self.escape_html(post['category'])}</span>
+                <span class="directory-title">{self.escape_html(post['title'])}</span>
+                <span class="directory-read">{post['read_min']} min</span>
+            </a>'''
 
-        # Other recent posts (next 4)
-        recent = self.posts[1:5] if len(self.posts) > 1 else []
+        if not items:
+            items = '\n            <p class="directory-empty">Nothing published yet.</p>\n'
 
-        featured_html = ''
-        if featured:
-            tags_html = ''.join(f'<span class="tag">{tag}</span>' for tag in featured.get('tags', []))
-            featured_html = f'''
-            <article class="post-card featured">
-                <div class="post-meta">
-                    <time class="post-date">{featured['date_display']}</time>
-                    <span class="post-category">{featured['category']}</span>
-                </div>
-                <h3 class="post-title">
-                    <a href="{featured['path']}">{self.escape_html(featured['title'])}</a>
-                </h3>
-                <p class="post-excerpt">{self.escape_html(featured['excerpt'])}</p>
-                <div class="post-tags">{tags_html}</div>
-            </article>'''
-
-        recent_html = ''
-        for post in recent:
-            recent_html += f'''
-                <article class="post-card">
-                    <div class="post-meta">
-                        <time class="post-date">{post['date_display']}</time>
-                        <span class="post-category">{post['category']}</span>
-                    </div>
-                    <h3 class="post-title">
-                        <a href="{post['path']}">{self.escape_html(post['title'])}</a>
-                    </h3>
-                    <p class="post-excerpt">{self.escape_html(post['excerpt'])}</p>
-                </article>'''
-
-        index_html = f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{self.site_name}</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="grain-overlay"></div>
-
-    <header class="site-header">
-        <nav class="nav-container">
-            <a href="index.html" class="logo">
-                <span class="logo-symbol">λ</span>
-                <span class="logo-text">bala</span>
-            </a>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link active">Writing</a>
-                <a href="about.html" class="nav-link">About</a>
-            </div>
-        </nav>
-    </header>
-
-    <main class="main-content">
-        <section class="hero">
-            <div class="hero-content">
-                <p class="hero-tagline">Hi, I am Bala.</p>
-                <h1 class="hero-title">I like engineering, economics, policy, and complex systems.</h1>
-            </div>
-            <div class="hero-aside">
-                <p class="aside-kicker">Now</p>
-                <ul class="topic-list">
-                    <li>building ML infrastructure at <a href="https://www.grab.com/" target="_blank" rel="noopener">Grab</a></li>
-                    <li>thinking about social sciences, especially economics and policy</li>
-                    <li>previously: wizard wearing many hats</li>
-                </ul>
-            </div>
+        index_html = f'''{self.page_head(self.site_name, "", self.site_description)}
+{self.render_header("", "writing")}        <section class="home-hero">
+            <img src="images/intro.svg" alt="">
         </section>
 
         <section class="posts-section">
-            <div class="section-header">
-                <h2 class="section-title">Writing</h2>
-                <div class="section-line"></div>
+            <div class="directory">
+                <div class="directory-head">
+                    <span>Date</span>
+                    <span>Topic</span>
+                    <span>Title</span>
+                    <span>Read</span>
+                </div>
+                {items}
             </div>
-
-            {featured_html}
-
-            <div class="posts-grid">
-                {recent_html}
-            </div>
-
-            <a href="archive.html" class="view-all">
-                Browse the archive
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </a>
         </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-left">
-                <p class="footer-copyright">© {datetime.now().year} {self.site_name}</p>
-                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
-            </div>
-            <div class="footer-links">
-                <a href="https://github.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://x.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">X</a>
-                <a href="feed.xml" class="footer-link">RSS</a>
-            </div>
-        </div>
-    </footer>
-
-    <script src="js/main.js"></script>
-</body>
-</html>'''
+{self.render_footer("")}'''
 
         with open('index.html', 'w', encoding='utf-8') as f:
             f.write(index_html)
         print("  Generated: index.html")
-
-    def generate_archive(self):
-        """Generate the archive.html with all posts by year."""
-        if not self.posts:
-            return
-
-        print("Generating archive.html...")
-
-        # Group posts by year
-        posts_by_year = {}
-        for post in self.posts:
-            date = post.get('date', '')
-            if hasattr(date, 'year'):  # datetime or date object
-                year = date.year
-            elif isinstance(date, str) and len(date) >= 4:
-                year = date[:4]
-            else:
-                year = 'Unknown'
-
-            if year not in posts_by_year:
-                posts_by_year[year] = []
-            posts_by_year[year].append(post)
-
-        # Build archive HTML
-        years_html = ''
-        for year in sorted(posts_by_year.keys(), reverse=True):
-            posts = posts_by_year[year]
-            items_html = ''
-            for post in posts:
-                date_short = post['date_display'][5:] if len(post['date_display']) > 5 else post['date_display']
-                items_html += f'''
-                    <li class="archive-item">
-                        <time class="archive-date">{date_short}</time>
-                        <a href="{post['path']}" class="archive-title">{self.escape_html(post['title'])}</a>
-                        <span class="archive-category">{post['category']}</span>
-                    </li>'''
-
-            years_html += f'''
-            <div class="archive-year">
-                <h2 class="year-heading">{year}</h2>
-                <ul class="archive-list">{items_html}
-                </ul>
-            </div>'''
-
-        archive_html = f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archive | {self.site_name}</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,520;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="grain-overlay"></div>
-
-    <header class="site-header">
-        <nav class="nav-container">
-            <a href="index.html" class="logo">
-                <span class="logo-symbol">λ</span>
-                <span class="logo-text">bala</span>
-            </a>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link active">Writing</a>
-                <a href="about.html" class="nav-link">About</a>
-            </div>
-        </nav>
-    </header>
-
-    <main class="main-content">
-        <section class="archive-section">
-            <header class="page-header">
-                <h1 class="page-title">Archive</h1>
-                <p class="page-description">Everything published here, newest first.</p>
-            </header>
-            {years_html}
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-left">
-                <p class="footer-copyright">© {datetime.now().year} {self.site_name}</p>
-                <p class="footer-note">Engineering, platforms, economics, and policy.</p>
-            </div>
-            <div class="footer-links">
-                <a href="https://github.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://x.com/bashketchum02" class="footer-link" target="_blank" rel="noopener">X</a>
-                <a href="feed.xml" class="footer-link">RSS</a>
-            </div>
-        </div>
-    </footer>
-
-    <script src="js/main.js"></script>
-</body>
-</html>'''
-
-        with open('archive.html', 'w', encoding='utf-8') as f:
-            f.write(archive_html)
-        print("  Generated: archive.html")
 
     def generate_rss(self):
         """Generate RSS feed."""
@@ -675,7 +527,7 @@ class BlogBuilder:
         print("  Generated: feed.xml")
 
     def build(self):
-        """Full build: posts, index, archive, RSS."""
+        """Full build: posts, index, RSS."""
         print(f"\n{'='*50}")
         print(f"Building blog: {self.site_name}")
         print(f"{'='*50}\n")
@@ -684,7 +536,6 @@ class BlogBuilder:
 
         if self.posts:
             self.generate_index()
-            self.generate_archive()
             self.generate_rss()
 
         print(f"\n{'='*50}")

@@ -1,10 +1,10 @@
 # Blog
 
-A minimal, research-focused blog for ML/MLOps content. Designed to appeal to both academic and industry audiences.
+A minimal, sharp editorial blog. Content-first: ML infrastructure, with a running interest in social sciences.
 
 ## Features
 
-- **Modern, minimalist design** with a clean aesthetic
+- **Monospace-first design** (IBM Plex Mono / IBM Plex Sans), an opencode-inspired terminal aesthetic
 - **Markdown support** for writing posts
 - **LaTeX equations** via KaTeX
 - **Syntax highlighting** via highlight.js
@@ -16,10 +16,8 @@ A minimal, research-focused blog for ML/MLOps content. Designed to appeal to bot
 
 ```
 blog/
-├── index.html          # Homepage with recent posts
-├── about.html          # About page
-├── research.html       # Publications and research
-├── archive.html        # All posts archive
+├── index.html          # Content-first directory of all posts
+├── about.html          # About page (static)
 ├── feed.xml            # RSS feed
 ├── build.py            # Markdown to HTML converter
 ├── css/
@@ -130,19 +128,18 @@ Edit CSS variables in `css/style.css`:
 
 ```css
 :root {
-    --accent: #C45D3A;           /* Primary accent color */
-    --accent-secondary: #2D5A4A; /* Secondary accent */
-    --bg-primary: #FDFBF7;       /* Background */
-    --text-primary: #1A1A1A;     /* Text color */
+    --bg: #ffffff;               /* Background */
+    --fg: #1d1d1f;               /* Text */
+    --accent: #007aff;           /* Accent */
+    --surface: #f5f5f7;          /* Cards / code */
 }
 ```
 
 ### Fonts
 
 The site uses:
-- **Cormorant Garamond** - Display/headings
-- **Source Sans 3** - Body text
-- **JetBrains Mono** - Code and technical text
+- **IBM Plex Mono** - Body, headings, labels, and code (monospace-first)
+- **IBM Plex Sans** - Long-form reading prose
 
 Change fonts by updating the Google Fonts import in HTML files.
 
