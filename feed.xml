@@ -6,14 +6,14 @@
         <description>bashketchum02 builds ML infrastructure and likes social sciences.</description>
         <atom:link href="https://bashketchum02.github.io/feed.xml" rel="self" type="application/rss+xml"/>
         <language>en-us</language>
-        <lastBuildDate>Tue, 25 Aug 2026 20:43:33 +0000</lastBuildDate>
+        <lastBuildDate>Sun, 30 Aug 2026 17:03:01 +0000</lastBuildDate>
         
         <item>
-            <title>tasteful engineering</title>
-            <link>https://bashketchum02.github.io/posts/coding_art_form.html</link>
-            <description>writing code for fun AND profit, should be considered separate acts</description>
-            <pubDate>2026-08-20</pubDate>
-            <guid>https://bashketchum02.github.io/posts/coding_art_form.html</guid>
+            <title>interactive embeds</title>
+            <link>https://bashketchum02.github.io/posts/interactive-embeds.html</link>
+            <description>the blog can now embed interactive apps — starting with a leader election simulator</description>
+            <pubDate>2026-08-30</pubDate>
+            <guid>https://bashketchum02.github.io/posts/interactive-embeds.html</guid>
         </item>
     </channel>
 </rss>

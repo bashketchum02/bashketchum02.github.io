@@ -74,6 +74,21 @@ POST_SCRIPTS = '''
                 throwOnError: false
             });
         });
+    </script>
+    <script>
+        (function() {
+            window.addEventListener("message", function(event) {
+                if (!event.data || event.data.type !== "app:height") return;
+                var frames = document.querySelectorAll("iframe.app-frame");
+                for (var i = 0; i < frames.length; i++) {
+                    if (frames[i].contentWindow === event.source) {
+                        var h = parseInt(event.data.height, 10);
+                        if (h > 40 && h < 20000) frames[i].style.height = h + "px";
+                        return;
+                    }
+                }
+            });
+        })();
     </script>'''
 
 
@@ -244,6 +259,62 @@ class BlogBuilder:
         words = len(text.split())
         return max(1, round(words / 225))
 
+    # --- Interactive app embedding -----------------------------------------
+    # Markdown directives:
+    #   <!-- app: name height=460 caption="Simulator" -->   -> apps/<name>/index.html
+    #   <!-- embed: https://... height=520 -->              -> external iframe
+    # These pass through python-markdown untouched and are replaced post-render.
+
+    APP_DIRECTIVE_RE = re.compile(r'<!--\s*app:\s*([A-Za-z0-9_-]+)\s*(.*?)-->', re.DOTALL)
+    EMBED_DIRECTIVE_RE = re.compile(r'<!--\s*embed:\s*(\S+)\s*(.*?)-->', re.DOTALL)
+    ATTR_RE = re.compile(r'(\w+)\s*=\s*("([^"]*)"|\'([^\']*)\'|(\S+))')
+
+    @staticmethod
+    def _parse_attrs(text: str) -> dict:
+        attrs = {}
+        for m in BlogBuilder.ATTR_RE.finditer(text or ''):
+            key = m.group(1).lower()
+            val = next(g for g in (m.group(3), m.group(4), m.group(5)) if g is not None)
+            attrs[key] = val
+        return attrs
+
+    @staticmethod
+    def _safe_height(attrs: dict, default: int = 420) -> int:
+        raw = str(attrs.get('height', ''))
+        return int(raw) if re.fullmatch(r'\d{2,5}', raw) else default
+
+    def _embed_figure(self, src: str, attrs: dict) -> str:
+        height = self._safe_height(attrs)
+        caption = attrs.get('caption', '').strip()
+        title = self.escape_html(caption or 'interactive app')
+        cap_html = f'\n    <figcaption>{self.escape_html(caption)}</figcaption>' if caption else ''
+        return (f'<figure class="app-embed">\n'
+                f'    <iframe class="app-frame" src="{self.escape_html(src)}" '
+                f'style="height:{height}px" loading="lazy" title="{title}"></iframe>'
+                f'{cap_html}\n</figure>')
+
+    def embed_apps(self, html: str) -> str:
+        """Replace app/embed directives with iframe figures."""
+        def app_repl(m):
+            name = m.group(1)
+            if not (Path('apps') / name / 'index.html').exists():
+                print(f"  Warning: app '{name}' not found (apps/{name}/index.html)")
+                return (f'<div class="app-embed app-missing">'
+                        f'app not found: {self.escape_html(name)}</div>')
+            return self._embed_figure(f'../apps/{name}/', self._parse_attrs(m.group(2)))
+
+        def embed_repl(m):
+            url = m.group(1)
+            if not re.match(r'^https?://', url):
+                print(f"  Warning: embed url not http(s): {url}")
+                return (f'<div class="app-embed app-missing">'
+                        f'invalid embed url: {self.escape_html(url)}</div>')
+            return self._embed_figure(url, self._parse_attrs(m.group(2)))
+
+        html = self.APP_DIRECTIVE_RE.sub(app_repl, html)
+        html = self.EMBED_DIRECTIVE_RE.sub(embed_repl, html)
+        return html
+
     def generate_toc(self, content: str) -> str:
         """Generate table of contents HTML."""
         headings = re.findall(r'<h([1234])[^>]*id="([^"]+)"[^>]*>(.+?)</h\1>', content)
@@ -262,9 +333,12 @@ class BlogBuilder:
     def format_date(self, date) -> str:
         """Format date for display."""
         if hasattr(date, 'strftime'):  # datetime or date object
-            return date.strftime('%Y.%m.%d')
+            return date.strftime('%b %d, %Y')
         elif isinstance(date, str):
-            return date.replace('-', '.')
+            try:
+                return datetime.strptime(date, '%Y-%m-%d').strftime('%b %d, %Y')
+            except ValueError:
+                return date
         return str(date)
 
     def format_date_rss(self, date) -> str:
@@ -354,6 +428,9 @@ class BlogBuilder:
         # Render markdown
         html_content = self.render_markdown(body)
 
+        # Replace app/embed directives with iframe embeds
+        html_content = self.embed_apps(html_content)
+
         # Generate TOC
         toc_html = self.generate_toc(html_content)
 
@@ -389,10 +466,7 @@ class BlogBuilder:
         date = self.format_date(meta.get('date', datetime.now().strftime('%Y-%m-%d')))
         category = meta.get('category', 'General')
         excerpt = meta.get('excerpt', '')
-        tags = meta.get('tags', [])
         read_min = meta.get('read_min', 1)
-
-        tags_html = ''.join(f'<span class="tag">{tag}</span>' for tag in tags)
 
         html = f'''{self.page_head(f"{self.escape_html(title)} | {self.site_name}", "../", excerpt, POST_HEAD_EXTRAS)}
 {self.render_header("../", "writing")}        <article>
@@ -409,10 +483,6 @@ class BlogBuilder:
             <div class="post-layout">
                 <div class="post-content">
                     {content}
-
-                    <div class="post-tags">
-                        {tags_html}
-                    </div>
                 </div>
 
                 {toc}
@@ -437,7 +507,7 @@ class BlogBuilder:
             return
 
         for md_file in md_files:
-            if md_file.name == 'template.md':
+            if md_file.name == 'template.md' or md_file.name.startswith('_'):
                 continue
             post = self.render_post(md_file)
             if post:
@@ -459,11 +529,10 @@ class BlogBuilder:
         items = ''
         for post in self.posts:
             items += f'''
-            <a href="{post['path']}" class="directory-item">
-                <time class="directory-date">{post['date_display']}</time>
-                <span class="directory-category">{self.escape_html(post['category'])}</span>
-                <span class="directory-title">{self.escape_html(post['title'])}</span>
-                <span class="directory-read">{post['read_min']} min</span>
+            <a href="{post['path']}" class="post-row">
+                <span class="post-row-meta"><time>{post['date_display']}</time> &middot; {self.escape_html(post['category'])}</span>
+                <span class="post-row-title">{self.escape_html(post['title'])}</span>
+                <span class="post-row-read">{post['read_min']}m</span>
             </a>'''
 
         if not items:
@@ -475,13 +544,7 @@ class BlogBuilder:
         </section>
 
         <section class="posts-section">
-            <div class="directory">
-                <div class="directory-head">
-                    <span>Date</span>
-                    <span>Topic</span>
-                    <span>Title</span>
-                    <span>Read</span>
-                </div>
+            <div class="post-list">
                 {items}
             </div>
         </section>

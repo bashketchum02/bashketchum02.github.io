@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>app template</title>
+<style>
+    /* Apps render inside an iframe on the post page. Keep the body background
+       transparent so the embed blends with the site in light and dark mode. */
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; }
+    body {
+        font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: light-dark(#1d1d1f, #edecec);
+        padding: 16px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- your app styles below --- */
+</style>
+</head>
+<body>
+
+<!-- your app markup -->
+
+<script>
+    // Report content height to the parent page so the iframe auto-resizes.
+    (function () {
+        var last = -1;
+        function report() {
+            var h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+            if (h !== last) {
+                last = h;
+                parent.postMessage({ type: "app:height", height: h }, "*");
+            }
+        }
+        if ("ResizeObserver" in window) {
+            new ResizeObserver(report).observe(document.documentElement);
+        } else {
+            window.addEventListener("resize", report);
+        }
+        window.addEventListener("load", report);
+        report();
+    })();
+</script>
+</body>
+</html>

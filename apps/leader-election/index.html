@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>leader election</title>
+<style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; }
+    body {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: light-dark(#1d1d1f, #edecec);
+        padding: 14px 16px 10px;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; }
+    svg { width: 100%; height: auto; display: block; }
+    .node { cursor: pointer; }
+    .node circle.body {
+        fill: light-dark(#e9e9ee, #2c2c2e);
+        stroke: light-dark(#c9c9cf, #48484a);
+        stroke-width: 1.5;
+        transition: fill 0.2s, stroke 0.2s;
+    }
+    .node.leader circle.body { fill: #f2500c; stroke: #f2500c; }
+    .node.dead circle.body { fill: transparent; stroke-dasharray: 4 4; }
+    .node.dead text { opacity: 0.35; }
+    .node text { fill: light-dark(#1d1d1f, #edecec); font-size: 15px; text-anchor: middle; pointer-events: none; font-weight: 600; }
+    .node .term { font-size: 11px; font-weight: 400; fill: light-dark(#86868b, #86868b); }
+    line.hb { stroke: light-dark(#c9c9cf, #3a3a3c); stroke-width: 1; opacity: 0.7; }
+    line.vote { stroke: #f2500c; stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.45; }
+    .pulse { fill: #f2500c; }
+    .controls {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+        margin-top: 8px;
+    }
+    button {
+        font: inherit; font-size: 12px; padding: 4px 12px;
+        border: 1px solid light-dark(#d2d2d7, #38383a);
+        background: transparent; color: inherit; border-radius: 4px; cursor: pointer;
+    }
+    button:hover { border-color: #f2500c; color: #f2500c; }
+    label {
+        font-size: 12px; color: light-dark(#6e6e73, #a1a1a6);
+        display: inline-flex; gap: 8px; align-items: center;
+    }
+    input[type="range"] { width: 130px; accent-color: #f2500c; }
+    .hint { margin-top: 8px; font-size: 11px; color: light-dark(#86868b, #86868b); }
+    .log {
+        margin-top: 4px; font-size: 11px; line-height: 1.7;
+        color: light-dark(#86868b, #86868b); min-height: 72px;
+    }
+    .log div:last-child { color: light-dark(#1d1d1f, #edecec); }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+    <svg id="net" viewBox="0 0 640 160" aria-label="leader election simulation">
+        <g id="lines"></g>
+        <g id="nodes"></g>
+        <g id="fx"></g>
+    </svg>
+
+    <div class="controls">
+        <button id="kill" type="button">kill leader</button>
+        <button id="reset" type="button">reset</button>
+        <label>election timeout
+            <input type="range" id="timeout" min="600" max="3000" step="100" value="1500">
+            <span id="timeoutVal">1500ms</span>
+        </label>
+    </div>
+
+    <p class="hint">click a node to kill / revive it. set the timeout below the heartbeat interval to watch the cluster flap.</p>
+    <div class="log" id="log"></div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+    var NS = "http://www.w3.org/2000/svg";
+    var HB = 900;
+    var wrap = document.getElementById("wrap");
+    var svg = document.getElementById("net");
+    var linesG = document.getElementById("lines");
+    var nodesG = document.getElementById("nodes");
+    var fxG = document.getElementById("fx");
+    var logEl = document.getElementById("log");
+    var slider = document.getElementById("timeout");
+    var timeoutVal = document.getElementById("timeoutVal");
+
+    var nodes, leaderId, term, hbTimer, pulses, candidates, simNow, P, logLines, nodeEls;
+
+    function timeout() { return +slider.value; }
+
+    function layout() {
+        var w = wrap.clientWidth;
+        if (w >= 560) {
+            P = [];
+            for (var i = 0; i < 5; i++) P.push({ x: 70 + i * 125, y: 80 });
+            svg.setAttribute("viewBox", "0 0 640 160");
+        } else {
+            P = [{ x: 110, y: 55 }, { x: 320, y: 55 }, { x: 530, y: 55 }, { x: 215, y: 185 }, { x: 425, y: 185 }];
+            svg.setAttribute("viewBox", "0 0 640 245");
+        }
+    }
+
+    function init() {
+        nodes = [];
+        for (var i = 0; i < 5; i++) nodes.push({ id: i, alive: true, term: 0, electAt: Infinity });
+        term = 1;
+        nodes[0].term = 1;
+        leaderId = 0;
+        hbTimer = 0; pulses = []; candidates = []; simNow = 0; logLines = [];
+        layout();
+        buildDom();
+        log("n0 \u2192 leader (t=1)");
+        render();
+    }
+
+    function buildDom() {
+        nodesG.innerHTML = "";
+        nodeEls = [];
+        nodes.forEach(function (n) {
+            var g = document.createElementNS(NS, "g");
+            g.setAttribute("class", "node");
+            var c = document.createElementNS(NS, "circle");
+            c.setAttribute("cx", P[n.id].x); c.setAttribute("cy", P[n.id].y); c.setAttribute("r", 24);
+            c.setAttribute("class", "body");
+            var t = document.createElementNS(NS, "text");
+            t.setAttribute("x", P[n.id].x); t.setAttribute("y", P[n.id].y + 5);
+            t.textContent = "n" + n.id;
+            var tm = document.createElementNS(NS, "text");
+            tm.setAttribute("x", P[n.id].x); tm.setAttribute("y", P[n.id].y + 42);
+            tm.setAttribute("class", "term");
+            g.appendChild(c); g.appendChild(t); g.appendChild(tm);
+            g.addEventListener("click", function () { toggleNode(n.id); });
+            nodesG.appendChild(g);
+            nodeEls.push(g);
+        });
+        render();
+    }
+
+    function render() {
+        nodes.forEach(function (n, i) {
+            var g = nodeEls[i];
+            g.setAttribute("class",
+                "node" + (n.id === leaderId && n.alive ? " leader" : "") + (!n.alive ? " dead" : ""));
+            var texts = g.querySelectorAll("text");
+            texts[0].setAttribute("x", P[n.id].x); texts[0].setAttribute("y", P[n.id].y + 5);
+            texts[1].setAttribute("x", P[n.id].x); texts[1].setAttribute("y", P[n.id].y + 42);
+            texts[1].textContent = "t=" + n.term;
+            var body = g.querySelector("circle.body");
+            body.setAttribute("cx", P[n.id].x); body.setAttribute("cy", P[n.id].y);
+        });
+    }
+
+    function log(msg) {
+        logLines.push(msg);
+        if (logLines.length > 4) logLines.shift();
+        logEl.innerHTML = logLines.map(function (l) { return "<div>" + l + "</div>"; }).join("");
+    }
+
+    function toggleNode(id) {
+        var n = nodes[id];
+        n.alive = !n.alive;
+        if (!n.alive) {
+            log("n" + id + " \u2717 dead");
+            if (leaderId === id) {
+                leaderId = -1;
+                log("leader lost \u2014 election timers running");
+            }
+        } else {
+            var aliveTerms = nodes.filter(function (x) { return x.alive; }).map(function (x) { return x.term; });
+            if (aliveTerms.length) n.term = Math.max.apply(null, aliveTerms);
+            n.electAt = simNow + timeout() * (0.9 + 0.5 * Math.random());
+            log("n" + id + " back up");
+        }
+        render();
+    }
+
+    function startElection(n) {
+        term++;
+        n.term = term;
+        candidates.push({ id: n.id, until: simNow + 300 + Math.random() * 200, term: term });
+        n.electAt = Infinity;
+        log("n" + n.id + " \u2192 candidate (t=" + term + ")");
+    }
+
+    function step(dt) {
+        simNow += dt;
+
+        if (leaderId >= 0 && nodes[leaderId].alive) {
+            hbTimer += dt;
+            if (hbTimer >= HB) {
+                hbTimer = 0;
+                nodes.forEach(function (n) {
+                    if (n.alive && n.id !== leaderId) {
+                        pulses.push({ a: leaderId, b: n.id, t: 0 });
+                        n.electAt = simNow + timeout() * (0.9 + 0.5 * Math.random());
+                    }
+                });
+            }
+        }
+
+        nodes.forEach(function (n) {
+            if (n.alive && n.id !== leaderId && simNow >= n.electAt) startElection(n);
+        });
+
+        if (candidates.length && candidates.every(function (c) { return simNow >= c.until; })) {
+            var winner = candidates.reduce(function (a, b) {
+                return (b.term > a.term || (b.term === a.term && b.id > a.id)) ? b : a;
+            });
+            leaderId = winner.id;
+            nodes[winner.id].term = winner.term;
+            log("n" + winner.id + " \u2192 leader (t=" + winner.term + ")");
+            candidates = [];
+            hbTimer = 0;
+            nodes.forEach(function (n) {
+                if (n.alive && n.id !== leaderId) {
+                    n.electAt = simNow + timeout() * (0.9 + 0.5 * Math.random());
+                }
+            });
+            render();
+        }
+
+        pulses = pulses.filter(function (p) { return (p.t += dt / 350) < 1; });
+    }
+
+    function el(tag, attrs) {
+        var e = document.createElementNS(NS, tag);
+        for (var k in attrs) e.setAttribute(k, attrs[k]);
+        return e;
+    }
+
+    function draw() {
+        linesG.innerHTML = "";
+        if (leaderId >= 0 && nodes[leaderId].alive) {
+            nodes.forEach(function (n) {
+                if (n.alive && n.id !== leaderId) {
+                    linesG.appendChild(el("line", {
+                        x1: P[leaderId].x, y1: P[leaderId].y, x2: P[n.id].x, y2: P[n.id].y, "class": "hb"
+                    }));
+                }
+            });
+        }
+        candidates.forEach(function (c) {
+            nodes.forEach(function (n) {
+                if (n.alive && n.id !== c.id) {
+                    linesG.appendChild(el("line", {
+                        x1: P[c.id].x, y1: P[c.id].y, x2: P[n.id].x, y2: P[n.id].y, "class": "vote"
+                    }));
+                }
+            });
+        });
+
+        fxG.innerHTML = "";
+        pulses.forEach(function (p) {
+            var A = P[p.a], B = P[p.b];
+            fxG.appendChild(el("circle", {
+                cx: A.x + (B.x - A.x) * p.t,
+                cy: A.y + (B.y - A.y) * p.t,
+                r: 4, "class": "pulse"
+            }));
+        });
+        candidates.forEach(function (c) {
+            var prog = (simNow % 500) / 500;
+            fxG.appendChild(el("circle", {
+                cx: P[c.id].x, cy: P[c.id].y, r: 26 + 16 * prog,
+                fill: "none", stroke: "#f2500c", "stroke-width": 1.5, opacity: 1 - prog
+            }));
+        });
+    }
+
+    document.getElementById("kill").addEventListener("click", function () {
+        if (leaderId >= 0) toggleNode(leaderId);
+    });
+    document.getElementById("reset").addEventListener("click", init);
+    slider.addEventListener("input", function () { timeoutVal.textContent = slider.value + "ms"; });
+    window.addEventListener("resize", function () { layout(); render(); });
+
+    var prev = performance.now();
+    function frame(ts) {
+        var dt = Math.min(50, ts - prev);
+        prev = ts;
+        step(dt);
+        draw();
+        requestAnimationFrame(frame);
+    }
+
+    (function () {
+        var last = -1;
+        function report() {
+            var h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+            if (h !== last) {
+                last = h;
+                parent.postMessage({ type: "app:height", height: h }, "*");
+            }
+        }
+        if ("ResizeObserver" in window) {
+            new ResizeObserver(report).observe(document.documentElement);
+        } else {
+            window.addEventListener("resize", report);
+        }
+        window.addEventListener("load", report);
+        report();
+    })();
+
+    init();
+    requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

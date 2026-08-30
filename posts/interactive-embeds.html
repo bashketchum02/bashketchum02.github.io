@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>interactive embeds | bashketchum02</title>
+    <meta name="description" content="the blog can now embed interactive apps — starting with a leader election simulator">
+    <link rel="icon" type="image/svg+xml" href="../images/intro.svg">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/post.css">
+    <link rel="stylesheet" href="../css/syntax.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="../index.html" class="logo">bashketchum02</a>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link active">Writing</a>
+                <a href="../about.html" class="nav-link">About</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <article>
+            <header class="post-header">
+                <div class="post-meta">
+                    <time class="post-date">Aug 30, 2026</time>
+                    <span class="post-category">Meta</span>
+                    <span class="post-read">1 min read</span>
+                </div>
+                <h1 class="post-title">interactive embeds</h1>
+                <p class="post-excerpt">the blog can now embed interactive apps — starting with a leader election simulator</p>
+            </header>
+
+            <div class="post-layout">
+                <div class="post-content">
+                    <h1 id="why">why</h1>
+<p>I want to start writing about the internals of distributed systems (airflow, kubernetes, consensus protocols, etc), and those
+systems read much better when you can actually poke them. So the build system now supports embedding interactive apps
+directly inside posts.</p>
+<h1 id="how">how</h1>
+<p>Each app is a single self-contained html file under <code>apps/</code>, embedded with one directive in the markdown source:</p>
+<pre><code class="language-markdown">&lt;!-- app: leader-election height=400 caption=&quot;kill a node and watch re-election&quot; --&gt;
+</code></pre>
+<p>The directive renders the app below in a lazy iframe that auto-resizes via postMessage, so it stays mobile friendly.
+Apps get the site&rsquo;s light/dark scheme for free by keeping a transparent background and <code>color-scheme: light dark</code>.</p>
+<h1 id="the-demo">the demo</h1>
+<p>A leader election sim. The leader pulses heartbeats to every follower; killing the leader starts a timed election
+race (randomized timeouts, first candidate to gather a majority wins). Click a node to kill or revive it, or drag the
+election timeout below the heartbeat interval to watch the cluster flap.</p>
+<figure class="app-embed">
+    <iframe class="app-frame" src="../apps/leader-election/" style="height:400px" loading="lazy" title="leader election — click a node to kill or revive it"></iframe>
+    <figcaption>leader election — click a node to kill or revive it</figcaption>
+</figure>
+
+<h1 id="notes">notes</h1>
+<p>External embeds work too with <code>&lt;!-- embed: &lt;url&gt; --&gt;</code>. Scratch or draft posts named with a leading underscore
+(<code>_draft.md</code>) are skipped by the builder.</p>
+                </div>
+
+                <aside class="toc"><h4 class="toc-title">Contents</h4><ul class="toc-list"><li class=""><a href="#why">why</a></li><li class=""><a href="#how">how</a></li><li class=""><a href="#the-demo">the demo</a></li><li class=""><a href="#notes">notes</a></li></ul></aside>
+            </div>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="footer-copyright">&copy; 2026 bashketchum02</p>
+                <p class="footer-note">ml infrastructure &middot; social sciences</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
+                <a href="https://x.com/bashketchum02" class="footer-link">X</a>
+                <a href="../feed.xml" class="footer-link">RSS</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+    <script>
+        document.querySelectorAll("code.language-mermaid").forEach(function(el) {
+            var pre = el.parentElement;
+            var div = document.createElement("pre");
+            div.className = "mermaid";
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        });
+        hljs.highlightAll();
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script>
+        (function() {
+            window.addEventListener("message", function(event) {
+                if (!event.data || event.data.type !== "app:height") return;
+                var frames = document.querySelectorAll("iframe.app-frame");
+                for (var i = 0; i < frames.length; i++) {
+                    if (frames[i].contentWindow === event.source) {
+                        var h = parseInt(event.data.height, 10);
+                        if (h > 40 && h < 20000) frames[i].style.height = h + "px";
+                        return;
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
