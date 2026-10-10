@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>complacent | bashketchum02</title>
+    <meta name="description" content="Looking back on life">
+    <link rel="icon" type="image/svg+xml" href="../images/intro.svg">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/post.css">
+    <link rel="stylesheet" href="../css/syntax.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="../index.html" class="logo">bashketchum02</a>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link active">Writing</a>
+                <a href="../about.html" class="nav-link">About</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <article>
+            <header class="post-header">
+                <div class="post-meta">
+                    <time class="post-date">Oct 10, 2026</time>
+                    <span class="post-category">Life</span>
+                    <span class="post-read">2 min read</span>
+                </div>
+                <h1 class="post-title">complacent</h1>
+                <p class="post-excerpt">Looking back on life</p>
+            </header>
+
+            <div class="post-layout">
+                <div class="post-content">
+                    <p>I have everything a 24-year-old person can possibly want. A good job, a loving relationship, no debt. I can eat what I want, buy most things I want, rent a place all by myself, take a sip on my 5 dollar cup of matcha latte in a cafe and write blogs (as I am doing right now, how meta!). But looking back on life, I have come a long way. Growing up I could barely have anything I wanted. I remember I had to study well, score top 3 in my class and nag my mother endlessly so she would buy me a tabletop war game (I don&rsquo;t know the name) that cost less than 5 dollars! Own place? I didn&rsquo;t even have my own room for majority of my life.</p>
+<p>Once you have all these luxuries, it becomes harder and harder to appreciate the 5 dollars, it becomes easy to think life will always be this way. You stop seeing the hardships of others, or even think about it. You ignore everything you have ever known and grew up in, the moment you get out of it. You become complacent, and unappreciative at the same time. I have everything, and I still want more. I can&rsquo;t be content with having all I ever wanted, because the moment I have it, there&rsquo;s more to have. I want more luxuries, more money, more everything. But I never sit back to appreciate that I perhaps have everything a younger me ever wanted. I also have forgotten what I wanted to do once I had things I really wanted. Did I want to help people? Help parents? Settle down? What did I really want when I was younger? I don&rsquo;t know or remember it anymore, because in the process of achieving my goals, I have forgotten why I set those goals. Setting goals and achieving them has become the point, at the expense of everything else.</p>
+<p>I must say these are some incoherent ramblings and scramblings, but I felt like I rarely write about what I think about, this seemed like a good occasion.</p>
+                </div>
+
+                
+            </div>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="footer-copyright">&copy; 2026 bashketchum02</p>
+                <p class="footer-note">ml infrastructure &middot; social sciences</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
+                <a href="https://x.com/bashketchum02" class="footer-link">X</a>
+                <a href="../feed.xml" class="footer-link">RSS</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+    <script>
+        document.querySelectorAll("code.language-mermaid").forEach(function(el) {
+            var pre = el.parentElement;
+            var div = document.createElement("pre");
+            div.className = "mermaid";
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        });
+        hljs.highlightAll();
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script>
+        (function() {
+            window.addEventListener("message", function(event) {
+                if (!event.data || event.data.type !== "app:height") return;
+                var frames = document.querySelectorAll("iframe.app-frame");
+                for (var i = 0; i < frames.length; i++) {
+                    if (frames[i].contentWindow === event.source) {
+                        var h = parseInt(event.data.height, 10);
+                        if (h > 40 && h < 20000) frames[i].style.height = h + "px";
+                        return;
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
