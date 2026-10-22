@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sharing one memory bus on apple silicon | bashketchum02</title>
+    <meta name="description" content="An assistant on your laptop rarely runs one model. A chat model writes the reply, and smaller helper models run beside it. On Apple Silicon they all share one pool of memory. I measured how much they slow each other down, found a simple rule for it, and built a scheduler that fixes most of the damage.">
+    <link rel="icon" type="image/svg+xml" href="../images/intro.svg">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/post.css">
+    <link rel="stylesheet" href="../css/syntax.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="../index.html" class="logo">bashketchum02</a>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link active">Writing</a>
+                <a href="../about.html" class="nav-link">About</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <article>
+            <header class="post-header">
+                <div class="post-meta">
+                    <time class="post-date">Oct 17, 2026</time>
+                    <span class="post-category">Systems</span>
+                    <span class="post-read">22 min read</span>
+                </div>
+                <h1 class="post-title">sharing one memory bus on apple silicon</h1>
+                <p class="post-excerpt">An assistant on your laptop rarely runs one model. A chat model writes the reply, and smaller helper models run beside it. On Apple Silicon they all share one pool of memory. I measured how much they slow each other down, found a simple rule for it, and built a scheduler that fixes most of the damage.</p>
+            </header>
+
+            <div class="post-layout">
+                <div class="post-content">
+                    <p>An assistant that runs on your own device rarely runs one model. A chat model writes the reply. A smaller model decides which tool to call. Another one filters unsafe output. Another one searches your notes or reads your screen. To save battery, the system often puts the chat model on the GPU and the helper models on the Neural Engine (ANE), the part of the chip built for small neural networks.</p>
+<p>That arrangement has a catch. On Apple Silicon, the GPU and the ANE do not have their own memory. They share one pool. When both read their model weights at the same moment, they queue up for the same memory channels.</p>
+<p>I wanted to know how much that costs the chat model, and whether a scheduler can reduce the cost. This post is what I found, written for people who do not work on this every day. The short version:</p>
+<ul>
+<li>Two models running together can slow the chat model by up to <strong>42%</strong>.</li>
+<li>The damage shows up first in the <strong>worst tokens</strong>, not the average. At light load, the median barely moves while the slowest 5% of tokens get 24% to 30% slower.</li>
+<li>The slowdown follows a <strong>simple line</strong>: the chat model keeps whatever share of memory bandwidth the helper models leave behind.</li>
+<li>A scheduler that watches token timing, and uses the idle gaps in a conversation, completes <strong>3.1 to 8.2 times more helper work</strong> than a fixed rate cap, with no loss of smoothness.</li>
+</ul>
+<h2 id="what-one-memory-pool-means">What &ldquo;one memory pool&rdquo; means</h2>
+<p>In most computers, the processor and the graphics chip have separate memory. Moving data between them costs a copy, and that copy costs time and power. Apple Silicon removes it. The CPU, the GPU, and the ANE all read one pool of memory. That is why a helper model on the ANE can read a buffer the GPU just wrote, with no copying at all.</p>
+<p>The same design has a cost. All three units draw from the same memory channels. Think of one pipe feeding several taps. Each tap can be wide open on its own. Open them together, and each one gets a smaller stream. When the ANE streams its weights while the GPU streams its weights, the two streams meet in the middle and neither gets the bandwidth it wanted.</p>
+<h2 id="why-writing-a-reply-is-really-a-memory-job">Why writing a reply is really a memory job</h2>
+<p>A large language model writes a reply one token at a time. A token is a small piece of a word, roughly three quarters of a word.</p>
+<p>To produce a single token, the model must read every one of its weights out of memory. It reads the whole model, every time, for every token. For a 2.6-billion-parameter model at 4-bit precision, that is about 1.4 GB read per token. The arithmetic per token is small. The reading is not.</p>
+<p>So the speed of a reply depends on one thing: how much memory bandwidth the GPU can get. If helper models take part of that bandwidth, the reply slows down. Nothing is broken. The models are simply sharing a finite resource.</p>
+<h2 id="the-number-users-actually-feel">The number users actually feel</h2>
+<p>People do not experience average speed. They experience the worst moments. If nineteen tokens arrive quickly and the twentieth arrives late, the reply feels like it stuttered, even though the average was fine.</p>
+<p>So I track two numbers for the gap between tokens:</p>
+<ul>
+<li>The <strong>median</strong> gap. Half the tokens are faster than this.</li>
+<li>The <strong>p95</strong> gap. Only 5% of tokens are slower than this.</li>
+</ul>
+<p>The p95 is the one that decides whether a reply feels smooth. As the results below show, it is also the number that reacts first when two models compete.</p>
+<h2 id="four-ways-to-measure-this-wrong">Four ways to measure this wrong</h2>
+<p>Interference between two accelerators is easy to measure incorrectly. I made four mistakes before the numbers made sense. Each one changed a result, and one of them changed a conclusion. I describe them because anyone repeating this work will meet the same traps.</p>
+<h3 id="1-a-background-python-thread-measures-python-not-the-hardware">1. A background Python thread measures Python, not the hardware</h3>
+<p>My first version ran the helper model in a background Python thread. The results were nonsense: the same setup gave a median latency of 47 ms one minute and 724 ms the next, against a baseline of 6.29 ms. That is a spread of about 15 times.</p>
+<p>The cause was not memory contention. Python has a global interpreter lock (GIL): only one thread runs Python bytecode at a time. My two models were taking turns inside Python, not competing for memory. To prove it, I forced the helper model to run on the CPU instead of the ANE. The slowdown was the same.</p>
+<p>The fix is to run the helper model in a separate process. After that, run-to-run variation dropped below 1%.</p>
+<h3 id="2-the-power-sensor-for-the-ane-does-not-exist-and-the-one-that-does-lags">2. The power sensor for the ANE does not exist, and the one that does lags</h3>
+<p>macOS ships a tool called <code>powermetrics</code>. It reports CPU power and GPU power. It does not report ANE power at all, even when the ANE is running 200 times per second. A power measurement that only watches the GPU rail misses the ANE completely.</p>
+<p>To get total power for the whole machine, I wrote a small C tool that reads the <code>PSTR</code> key from the AppleSMC sensor directly. It does not need root. That sensor has its own quirks:</p>
+<ul>
+<li>It updates about once per second, even when sampled ten times per second.</li>
+<li>It lags the real load by about 2.3 seconds on the M5 Pro and 1.9 seconds on the M2 Pro.</li>
+</ul>
+<p>So a short one-second benchmark gives a bad energy number. I run each test for 20 seconds or more and integrate the power over the whole window.</p>
+<h3 id="3-a-busy-desktop-changes-the-answer">3. A busy desktop changes the answer</h3>
+<p>My first runs were on a laptop with the screen on. The window compositor was using the GPU, and idle power was about 9 W. Under that load, the decoder reached 147.3 tokens per second at 4-bit precision.</p>
+<p>Then I closed the background apps, put the display to sleep, and ran everything over SSH. Idle power fell to 2.7 W on the M5 Pro, and the decoder reached 158.8 tokens per second. Background activity is not just noise. It uses memory bandwidth, and it changed the measured speed by about 8%.</p>
+<h3 id="4-drift-and-pooling-create-effects-that-are-not-there">4. Drift and pooling create effects that are not there</h3>
+<p>Over a session of several hours, the machine&rsquo;s baseline drifts by up to 9%, because of heat and clock speeds. If you fit a line to raw, unnormalized numbers, you can &ldquo;discover&rdquo; an effect that does not exist. One of my raw sweeps gave an R² of 0.095 and suggested a fake super-linear trend. Another mistake, pooling two different helper models into one fit, once suggested the wrong shape for the curve.</p>
+<p>The protocol that avoids this: measure the no-load baseline for each sweep, normalize against it, average three repeats per condition, and fit each (chip, helper model) pair on its own.</p>
+<h2 id="the-test-setup">The test setup</h2>
+<p>I measured on two chips and with two helper models, for four combinations in total.</p>
+<ul>
+<li><strong>Chips.</strong> An Apple M5 Pro laptop (24 GB, macOS 26.6.1, display asleep) and an Apple M2 Pro Mac mini in the cloud (macOS 26.7.1, headless).</li>
+<li><strong>The chat model.</strong> <code>LFM2.5-2.6B</code>, on the GPU, at 4-bit and 8-bit precision. Each request writes 64 tokens.</li>
+<li><strong>Helper models.</strong> Two models of similar size, both on the ANE:<ol>
+<li>A plain dense network (352M parameters) — four large matrix multiplications in a row.</li>
+<li>A real text encoder, <code>roberta-large</code> (355M parameters) — the kind of model an assistant uses to read a prompt or search notes.</li>
+</ol>
+</li>
+</ul>
+<p>I used one plain model and one real one on purpose, to check whether a cheap stand-in model gives honest numbers.</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>Chip</th>
+<th>Helper model</th>
+<th>Call time (ms)</th>
+<th>Weight-read speed (GB/s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>M5 Pro</td>
+<td>dense network</td>
+<td>4.69</td>
+<td>150.3</td>
+</tr>
+<tr>
+<td>B</td>
+<td>M5 Pro</td>
+<td>RoBERTa</td>
+<td>6.78</td>
+<td>104.9</td>
+</tr>
+<tr>
+<td>C</td>
+<td>M2 Pro</td>
+<td>dense network</td>
+<td>11.46</td>
+<td>61.5</td>
+</tr>
+<tr>
+<td>D</td>
+<td>M2 Pro</td>
+<td>RoBERTa</td>
+<td>11.52</td>
+<td>61.7</td>
+</tr>
+</tbody>
+</table>
+<p>Before the main experiments, I checked the harness against published numbers for the M2 Pro from MacPaw Research. Their ANE reached 60.4 GB/s of weight-read speed; mine reached 61.5 to 61.7. Their 4-bit decoder reached about 100 tokens per second; mine reached 103.3. Close enough to trust the rest.</p>
+<h2 id="finding-1-a-cheap-stand-in-model-is-honest-on-a-slow-chip">Finding 1: a cheap stand-in model is honest on a slow chip</h2>
+<p>This one surprised me.</p>
+<p>On the M2 Pro, the fancy text encoder and the plain network take almost the same time: 11.52 ms against 11.46 ms. That is a 0.5% difference. Two very different models, same cost.</p>
+<p>The reason is that the M2 Pro&rsquo;s ANE tops out at about 61 GB/s of weight reads. Both models are limited by reading their weights, not by computing. The encoder&rsquo;s extra work (24 attention layers, normalization, and more) is completely hidden behind the waiting.</p>
+<p>On the M5 Pro, the story changes. Its ANE sustains 150 GB/s, so the weights arrive quickly and the encoder&rsquo;s computation becomes visible. The encoder takes 44% longer than the plain network.</p>
+<p>The lesson is practical for anyone benchmarking a neural chip: on a bandwidth-limited chip, a cheap model tells the truth. On a fast chip, it flatters you.</p>
+<h2 id="finding-2-how-much-the-chat-model-loses">Finding 2: how much the chat model loses</h2>
+<p>I ran the chat model alone, then added the helper model at seven increasing rates, from idle to as fast as it would go. The helper model competes for memory, so I plot the result against the memory traffic it actually achieved, not against the rate I asked for.</p>
+<figure>
+<img src="../images/fig1_dose_response.png" alt="Decoder throughput against achieved helper memory traffic, and the same data normalized into a straight line" class="wide">
+<figcaption>(a) Chat model speed against the helper model's memory traffic. The M5 Pro loses up to 42% (plain network) and 26% (encoder). The M2 Pro's ANE saturates at about 58 GB/s, so its loss is capped at 24% and 22%. (b) The same data, normalized. It falls on a straight line in all four setups.</figcaption>
+</figure>
+
+<p>Three things stood out.</p>
+<p><strong>The worst tokens go first.</strong> At a light helper rate, the median gap between tokens moves by less than 0.8% in every setup. But the p95 gap jumps immediately, by 24% to 30%. One helper weight burst can collide with one token step and create a visible stutter. On average, nothing looks wrong.</p>
+<p><strong>The M2 Pro&rsquo;s ANE has a ceiling.</strong> Past 96 calls per second, the M2 Pro&rsquo;s ANE stops going faster. Extra requests add no traffic. Because the traffic is capped, the damage is also capped, at about 24%. The M5 Pro&rsquo;s ANE is faster. It can push 141 GB/s into the memory system, and the chat model loses up to 42%. A faster helper chip can hurt more, not less.</p>
+<p><strong>It is memory traffic, not process overhead.</strong> I ran three controls. An idle process alongside the decoder changed its speed by 0.0%. A pure memory-copy loop on the CPU cost 6.6%. A helper model at the same rate cost 8.6%. The cost comes from moving bytes, and the ANE adds a little extra variance on top.</p>
+<p>For readers who want the full numbers, here is every measurement. Each row is the helper traffic it achieved, the chat model&rsquo;s speed, and the p95 gap in brackets.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Requested rate</th>
+<th>A: M5 / plain</th>
+<th>B: M5 / encoder</th>
+<th>C: M2 / plain</th>
+<th>D: M2 / encoder</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>off</td>
+<td>0.0, 159.1 [6.48]</td>
+<td>0.0, 158.9 [6.44]</td>
+<td>0.0, 103.4 [10.02]</td>
+<td>0.0, 103.2 [10.07]</td>
+</tr>
+<tr>
+<td>12 Hz</td>
+<td>7.9, 155.1 [8.38]</td>
+<td>8.0, 155.9 [7.97]</td>
+<td>7.9, 99.6 [12.61]</td>
+<td>8.0, 100.0 [12.26]</td>
+</tr>
+<tr>
+<td>32 Hz</td>
+<td>17.3, 151.2 [8.41]</td>
+<td>17.5, 152.1 [8.06]</td>
+<td>18.7, 95.0 [12.63]</td>
+<td>18.9, 95.8 [12.29]</td>
+</tr>
+<tr>
+<td>64 Hz</td>
+<td>34.0, 141.6 [8.71]</td>
+<td>35.8, 144.7 [8.19]</td>
+<td>41.6, 85.3 [12.82]</td>
+<td>42.0, 87.3 [12.44]</td>
+</tr>
+<tr>
+<td>96 Hz</td>
+<td>53.9, 133.4 [8.64]</td>
+<td>57.6, 136.5 [8.13]</td>
+<td>58.1, 78.3 [13.23]</td>
+<td>58.5, 81.3 [12.80]</td>
+</tr>
+<tr>
+<td>160 Hz</td>
+<td>103.2, 109.6 [10.17]</td>
+<td>109.0, 116.9 [8.77]</td>
+<td>58.1, 78.3 [13.27]</td>
+<td>58.4, 81.2 [12.80]</td>
+</tr>
+<tr>
+<td>∞</td>
+<td>141.1, 92.5 [11.24]</td>
+<td>109.1, 116.9 [8.75]</td>
+<td>58.1, 78.2 [13.45]</td>
+<td>58.3, 81.0 [12.93]</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="note">
+<strong>How to read this table.</strong> Each cell holds three values: helper memory traffic in GB/s, chat model speed in tokens per second, and the p95 gap between tokens in milliseconds. Every row is the average of three repeats.
+</div>
+
+<h2 id="the-simple-rule">The simple rule</h2>
+<p>All of the above fits one line:</p>
+<div class="math-block">$$T/T_0 = 1 - B_\mathrm{aux}/B_\mathrm{cap}$$</div>
+
+<p>In words: the chat model keeps the share of memory bandwidth that the helper models leave behind. <span class="math-inline">$T$</span> is the chat model&rsquo;s speed with helpers running, <span class="math-inline">$T_0$</span> is its speed alone, and <span class="math-inline">$B_\mathrm{aux}$</span> is the helper model&rsquo;s memory traffic.</p>
+<p><span class="math-inline">$B_\mathrm{cap}$</span> is the size of the budget. It is the traffic at which the chat model would slow to a stop. It is not a fixed hardware number. It depends on the chip, and it also shifts with the helper model:</p>
+<figure>
+<img src="../images/fig2_bcap_proxy.png" alt="The budget constant by chip and helper model, and the comparison between the plain network and the encoder" class="wide">
+<figcaption>(a) The budget constant <span class="math-inline">$B_\mathrm{cap}$</span> splits cleanly by chip, and shifts a little with the helper model. (b) The plain network and the encoder take almost the same time on the M2 Pro, but the encoder is 44% slower on the M5 Pro.</figcaption>
+</figure>
+
+<table>
+<thead>
+<tr>
+<th>Setup</th>
+<th>Fit quality (<span class="math-inline">$R^2$</span>)</th>
+<th>Error</th>
+<th>Exponent <span class="math-inline">$k$</span></th>
+<th>Budget <span class="math-inline">$B_\mathrm{cap}$</span> (GB/s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A: M5 / plain</td>
+<td>0.9995</td>
+<td>0.0033</td>
+<td>1.00</td>
+<td>335.7</td>
+</tr>
+<tr>
+<td>B: M5 / encoder</td>
+<td>0.9999</td>
+<td>0.0010</td>
+<td>1.00</td>
+<td>412.8</td>
+</tr>
+<tr>
+<td>C: M2 / plain</td>
+<td>0.9998</td>
+<td>0.0014</td>
+<td>1.00</td>
+<td>240.7</td>
+</tr>
+<tr>
+<td>D: M2 / encoder</td>
+<td>0.9998</td>
+<td>0.0013</td>
+<td>1.00</td>
+<td>275.0</td>
+</tr>
+</tbody>
+</table>
+<p>A few things worth noting.</p>
+<p><strong>The line fits almost perfectly.</strong> In all four setups, <span class="math-inline">$R^2$</span> is 0.9995 or better. I also tried two other shapes: a power law with a free exponent, and a queueing-style curve. The power law&rsquo;s free exponent settled on exactly 1.00, which means it collapsed back into the same straight line and paid for an extra parameter that did nothing. The queueing curve was worse in all four setups.</p>
+<p><strong>The chip sets the budget.</strong> The M5 Pro&rsquo;s budget is 336 to 413 GB/s. The M2 Pro&rsquo;s is 241 to 275 GB/s. The M5 Pro has roughly 1.4 to 1.5 times more room.</p>
+<p><strong>The helper model matters too.</strong> On the same chip, the encoder gets a 14% to 23% larger budget than the plain network. My guess is that the encoder&rsquo;s attention and normalization work breaks up its memory requests, so each byte is a little less demanding than a long run of matrix multiplications. I only have two models, so this is an observation, not a proven mechanism.</p>
+<p><strong>The practical rule.</strong> To keep 95% of the chat model&rsquo;s speed, the M5 Pro can afford 17 to 21 GB/s of helper traffic, which is about 24 to 29 helper calls per second. The M2 Pro can afford 12 to 14 GB/s, about 17 to 19 calls per second.</p>
+<h2 id="why-a-fixed-rate-cap-wastes-the-machine">Why a fixed rate cap wastes the machine</h2>
+<p>The rule above suggests an easy fix. Work out the safe rate, then cap the helper models at it, always. I tried that. It worked, but it wasted most of the machine.</p>
+<p>Here is why. An assistant is bursty. It writes for a second or two, then goes quiet for a second or two while you read or type. A fixed cap throttles the helper models during the quiet time too, when nothing is competing with them.</p>
+<p>I also tried an adaptive controller that watches latency and adjusts the rate on its own. That failed as well. On a steady workload, the fixed cap already met the target, so there was nothing to improve. The adaptive controller either overshot the target or collapsed to five calls per second.</p>
+<p>The problem is not the rate. The problem is that the rate is the same in both phases of a conversation.</p>
+<h2 id="the-scheduler-watch-the-gaps-not-the-engine">The scheduler: watch the gaps, not the engine</h2>
+<p>A scheduler on a phone cannot look inside the inference engine. It cannot ask the model what it is doing, and it cannot interrupt a helper model that has already started on the ANE. But it can watch one thing: when tokens come out.</p>
+<p>Tokens normally arrive every 6 to 13 ms. So if 30 ms pass with no token, the assistant must be idle. That single observation is enough.</p>
+<figure>
+<img src="../images/fig0_policies.png" alt="How a fixed cap and the scheduler allocate helper work over one conversation" class="wide">
+<figcaption>How each approach uses one conversation. A fixed cap holds one rate for the whole session, so the quiet gap is wasted. The scheduler caps helper work while tokens are coming out, releases it after 30 ms of silence, and pauses for 60 ms when writing resumes so that queued work drains. The 30 ms and 60 ms windows are drawn wider than scale here: a real 30 ms window next to a 1.5 s gap is a ratio of about 1 to 50.</figcaption>
+</figure>
+
+<p>The scheduler has three rules:</p>
+<ol>
+<li><strong>Watch for silence.</strong> After 30 ms with no token, the assistant is idle. Let the helper models run freely.</li>
+<li><strong>Cap during writing.</strong> When a token appears, the assistant is writing again. Cap the helper rate at the safe value from the cost model.</li>
+<li><strong>Pause to drain.</strong> Core ML, the framework that runs models on the ANE, queues work asynchronously. Lowering the rate does not cancel the calls already waiting. So when writing resumes, the scheduler pauses new helper submissions for 60 ms and lets the queue empty. Without this pause, queued helper calls land on the first tokens of the new reply. With it, boundary violations dropped by about an order of magnitude, and no helper throughput was lost.</li>
+</ol>
+<p>That is the whole design. No changes to the inference engine, no privileged access, no knowledge of what the models are doing.</p>
+<h2 id="results">Results</h2>
+<p>I compared five approaches across all four setups: the chat model alone, helper models running flat out, a fixed cap, an &ldquo;oracle&rdquo; that knows the true phase in advance, and the scheduler.</p>
+<p>In every setup, the scheduler completed far more helper work than the fixed cap, at the same or lower p95 gap.</p>
+<ul>
+<li><strong>M5 Pro, plain network:</strong> 3,668 helper calls against 445. That is 8.2 times more work, at a slightly lower p95 (8.27 ms against 8.34 ms). The chat model kept 96% of its no-helper speed.</li>
+<li><strong>M5 Pro, encoder:</strong> 2,607 calls against 444, or 5.9 times more, at the same p95. Fewer calls fit, because each encoder call takes 44% longer on this chip.</li>
+<li><strong>M2 Pro, both models:</strong> 1,604 and 1,629 calls against 517 and 521, or 3.1 times more, at equal or lower p95.</li>
+</ul>
+<p>The scheduler also matched the oracle closely: within 1.5% to 3.6% on helper throughput. Watching token silence is enough to capture almost all of the benefit of knowing the true phase.</p>
+<figure>
+<img src="../images/fig3_scheduler_pareto.png" alt="Helper calls completed against the chat model's p95 token gap, for each approach" class="wide">
+<figcaption>Helper calls completed against the chat model's p95 token gap. Up and to the left is better: more helper work, less stutter. The scheduler sits in the same corner as the oracle.</figcaption>
+</figure>
+
+<p>Here is the full comparison. The &ldquo;violation&rdquo; column is the share of tokens that miss a latency target set at 1.3 times the no-load p95.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Setup</th>
+<th>Approach</th>
+<th>p50 (ms)</th>
+<th>p95 (ms)</th>
+<th>tok/s</th>
+<th>Over target</th>
+<th>Helper calls</th>
+<th>Energy per call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A: M5 / plain</td>
+<td>chat alone</td>
+<td>6.32</td>
+<td>6.41</td>
+<td>158.3</td>
+<td>0.0%</td>
+<td>0</td>
+<td>&ndash;</td>
+</tr>
+<tr>
+<td></td>
+<td>uncontrolled</td>
+<td>10.76</td>
+<td>10.83</td>
+<td>93.0</td>
+<td>99.9%</td>
+<td>5,377</td>
+<td>0.147 J</td>
+</tr>
+<tr>
+<td></td>
+<td>fixed cap</td>
+<td>6.33</td>
+<td>8.34</td>
+<td>151.3</td>
+<td>5.2%</td>
+<td>445</td>
+<td>0.696 J</td>
+</tr>
+<tr>
+<td></td>
+<td>oracle</td>
+<td>6.34</td>
+<td>8.25</td>
+<td>151.9</td>
+<td>2.4%</td>
+<td>3,604</td>
+<td>0.174 J</td>
+</tr>
+<tr>
+<td></td>
+<td>scheduler</td>
+<td>6.34</td>
+<td>8.27</td>
+<td>152.0</td>
+<td>2.9%</td>
+<td>3,668</td>
+<td>0.172 J</td>
+</tr>
+<tr>
+<td>B: M5 / encoder</td>
+<td>chat alone</td>
+<td>6.30</td>
+<td>6.37</td>
+<td>158.8</td>
+<td>0.0%</td>
+<td>0</td>
+<td>&ndash;</td>
+</tr>
+<tr>
+<td></td>
+<td>uncontrolled</td>
+<td>8.57</td>
+<td>8.66</td>
+<td>117.1</td>
+<td>99.7%</td>
+<td>3,625</td>
+<td>0.226 J</td>
+</tr>
+<tr>
+<td></td>
+<td>fixed cap</td>
+<td>6.34</td>
+<td>7.94</td>
+<td>153.1</td>
+<td>0.0%</td>
+<td>444</td>
+<td>0.756 J</td>
+</tr>
+<tr>
+<td></td>
+<td>oracle</td>
+<td>6.35</td>
+<td>7.93</td>
+<td>153.3</td>
+<td>0.0%</td>
+<td>2,577</td>
+<td>0.260 J</td>
+</tr>
+<tr>
+<td></td>
+<td>scheduler</td>
+<td>6.34</td>
+<td>7.95</td>
+<td>153.3</td>
+<td>0.3%</td>
+<td>2,607</td>
+<td>0.259 J</td>
+</tr>
+<tr>
+<td>C: M2 / plain</td>
+<td>chat alone</td>
+<td>9.68</td>
+<td>9.90</td>
+<td>103.2</td>
+<td>0.0%</td>
+<td>0</td>
+<td>&ndash;</td>
+</tr>
+<tr>
+<td></td>
+<td>uncontrolled</td>
+<td>13.06</td>
+<td>13.16</td>
+<td>76.7</td>
+<td>97.5%</td>
+<td>2,373</td>
+<td>0.270 J</td>
+</tr>
+<tr>
+<td></td>
+<td>fixed cap</td>
+<td>9.78</td>
+<td>12.31</td>
+<td>96.9</td>
+<td>0.3%</td>
+<td>517</td>
+<td>0.837 J</td>
+</tr>
+<tr>
+<td></td>
+<td>oracle</td>
+<td>9.85</td>
+<td>12.45</td>
+<td>96.2</td>
+<td>0.0%</td>
+<td>1,566</td>
+<td>0.354 J</td>
+</tr>
+<tr>
+<td></td>
+<td>scheduler</td>
+<td>9.86</td>
+<td>12.26</td>
+<td>96.2</td>
+<td>0.3%</td>
+<td>1,604</td>
+<td>0.350 J</td>
+</tr>
+<tr>
+<td>D: M2 / encoder</td>
+<td>chat alone</td>
+<td>9.69</td>
+<td>9.94</td>
+<td>103.0</td>
+<td>0.0%</td>
+<td>0</td>
+<td>&ndash;</td>
+</tr>
+<tr>
+<td></td>
+<td>uncontrolled</td>
+<td>12.37</td>
+<td>12.61</td>
+<td>80.8</td>
+<td>0.9%</td>
+<td>2,325</td>
+<td>0.323 J</td>
+</tr>
+<tr>
+<td></td>
+<td>fixed cap</td>
+<td>9.77</td>
+<td>11.94</td>
+<td>97.4</td>
+<td>0.0%</td>
+<td>521</td>
+<td>0.870 J</td>
+</tr>
+<tr>
+<td></td>
+<td>oracle</td>
+<td>9.81</td>
+<td>12.03</td>
+<td>97.0</td>
+<td>0.3%</td>
+<td>1,572</td>
+<td>0.408 J</td>
+</tr>
+<tr>
+<td></td>
+<td>scheduler</td>
+<td>9.78</td>
+<td>11.94</td>
+<td>97.4</td>
+<td>0.0%</td>
+<td>1,629</td>
+<td>0.390 J</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="note">
+<strong>About the latency target.</strong> An absolute target does not transfer between machines. The M5 Pro's no-load p95 is 6.41 ms, and the M2 Pro's is 9.90 ms, so a fixed 10 ms target is easy on one machine and impossible on the other. I use 1.3 times each machine's own no-load p95.
+</div>
+
+<h2 id="when-you-actually-need-this">When you actually need this</h2>
+<p>Not every app needs a scheduler. The measurements point to three zones.</p>
+<p><strong>Below 1.2 times the no-load p95: do not run helper models while writing.</strong> The budget is too tight. Even a capped helper model produces occasional stutters. Helper work has to wait for the quiet gaps.</p>
+<p><strong>1.25 to 1.35 times: this is where control matters.</strong> In this band, running helper models with no control breaks the target on 58% to 100% of tokens. The scheduler holds that to 0% to 2.9%.</p>
+<p><strong>Above 1.5 times: you can often skip the scheduler.</strong> In three of the four setups, even uncontrolled helper models meet the target, because the memory system has enough headroom. The chat model is still 22% to 26% slower on average, though, so you pay in speed even when you meet the deadline.</p>
+<figure>
+<img src="../images/fig5_sla_window.png" alt="Share of tokens that miss the latency target, against how loose the target is">
+<figcaption>Share of tokens that miss the target, as the target gets looser. The shaded band is 1.25 to 1.35 times the no-load p95. Inside it, uncontrolled helper models fail in all four setups, while the scheduler stays near zero. Below the band, no approach meets the target. Above it, even no control is fine.</figcaption>
+</figure>
+
+<h2 id="energy-the-machine-pays-for-idle-time-anyway">Energy: the machine pays for idle time anyway</h2>
+<p>The energy result is the most striking part, and it comes from a simple observation.</p>
+<p>Over a 22 to 25 second session, the chip spends 282 to 389 joules even when the helper models do nothing. That energy covers the writing bursts and the quiet gaps. The machine is paying for the idle time regardless.</p>
+<p>A fixed cap burns that same idle energy but completes very few helper calls. The scheduler uses the same quiet gaps, so each extra call is cheap: 0.10 to 0.17 joules, against 0.70 to 0.87 joules under a fixed cap. That is 2.2 to 4.0 times less energy per helper call.</p>
+<figure>
+<img src="../images/fig4_energy.png" alt="Energy per helper call, and total session energy against completed calls" class="wide">
+<figcaption>(a) Energy per completed helper call. The scheduler uses 4.0, 2.9, 2.4, and 2.2 times less than a fixed cap across the four setups. (b) Total session energy against calls completed. The chip spends 282 to 389 joules even with no helper work, so extra calls that fill existing quiet gaps cost only 0.10 to 0.17 joules each.</figcaption>
+</figure>
+
+<h2 id="where-this-fits">Where this fits</h2>
+<p>Mobile systems such as Band, MASA, Pantheon, and HaX-CoNN schedule several neural networks across a phone&rsquo;s CPU, GPU, and NPU. Those systems target stateless workloads, like processing video frames one by one, and they optimize average throughput or frame deadlines. A chat model is different. It is stateful, it reads all its weights for every token, users judge it on the worst tokens rather than the average, and its quiet gaps are an opportunity rather than dead time.</p>
+<p>MacPaw Research measured LLM execution on the ANE and reported a similar effect: a router on the ANE, running beside a GPU decoder, cut the decoder&rsquo;s speed by about 20%. They treated that as a reason to keep the two apart with static placement. This work measures the effect in detail, turns it into a formula, and then uses the formula to schedule the helper models at run time instead.</p>
+<p>Other on-device LLM work, such as LLM in a Flash, MobileLLM, and speculative decoding, reduces the cost of running one model. That is a different problem from sharing the machine between several.</p>
+<h2 id="what-i-still-do-not-know">What I still do not know</h2>
+<ul>
+<li><strong>My helper load never stopped.</strong> In the trace experiments, the helper models always had work waiting. That is the worst case for a scheduler and the best case for leaving things uncontrolled, because uncontrolled work runs at full speed in both phases. Real assistants are burstier: a few context chunks per turn, not a continuous stream. A real workload should favor the scheduler more, not less.</li>
+<li><strong>The two machines ran different macOS versions.</strong> The M5 Pro ran macOS 26.6.1 and the M2 Pro ran macOS 26.7.1. I pinned the Python, MLX, Core ML, and PyTorch versions on both, but small scheduler differences cannot be ruled out. Read the chip comparisons as trends, not as a strict ranking.</li>
+<li><strong>Not every encoder converts to Core ML.</strong> <code>roberta-large</code> and <code>distilbert</code> convert with more than 95% of their operations on the ANE. With <code>coremltools</code> 9.0, <code>bert-base</code> and <code>electra</code> do not convert at all, because of an unsupported integer cast in the token-type embedding.</li>
+<li><strong>The think times are synthetic.</strong> The quiet gaps come from a random distribution with a mean of 1.5 seconds. Replaying real assistant traces, with real prompt lengths, is the obvious next step.</li>
+<li><strong>The budget constant comes from one run per setup.</strong> Each rate condition averages three repeats and the fit is excellent, but more runs would give a confidence interval on <span class="math-inline">$B_\mathrm{cap}$</span>.</li>
+<li><strong>Prefill is not protected.</strong> The scheduler needs a token before it knows writing has started. Before the first token, it thinks the machine is idle and leaves the helper models unrestricted. Prefill is compute-heavy rather than memory-heavy, so the effect looks small, but I did not measure it carefully.</li>
+</ul>
+<h2 id="takeaways">Takeaways</h2>
+<ul>
+<li>When a chat model and helper models share Apple Silicon&rsquo;s memory, the chat model can lose up to 42% of its speed.</li>
+<li>The damage appears in the worst tokens first. At light load, the median barely moves while the slowest 5% of tokens get 24% to 30% slower.</li>
+<li>The slowdown follows a straight line: the chat model keeps the share of memory bandwidth the helpers leave behind. One constant, <span class="math-inline">$B_\mathrm{cap}$</span>, captures the chip and the helper model.</li>
+<li>A fixed rate cap is safe but wasteful, because it throttles the helpers during the quiet gaps of a conversation.</li>
+<li>Watching token timing is enough. A scheduler that releases helper work after 30 ms of silence, and pauses for 60 ms when writing resumes, completes 3.1 to 8.2 times more helper work than a fixed cap, at the same or lower stutter, and uses 2.2 to 4.0 times less energy per call.</li>
+<li>Control matters most in a narrow band: when the latency budget is 1.25 to 1.35 times the no-load p95.</li>
+</ul>
+<h2 id="artifact-and-reproducibility">Artifact and reproducibility</h2>
+<p>All experiments ran on real Apple M5 Pro and M2 Pro hardware. Every number and figure above comes from recorded telemetry. The measurement harness, the experiment scripts, and the raw results are public at <a href="https://github.com/bashketchum02/npu-ane-bench">github.com/bashketchum02/npu-ane-bench</a>. The harness covers the protocol, the timing, the whole-machine power readings, the statistics, and the scheduler.</p>
+<p>Generative AI tools helped write the benchmark and plotting code, and helped edit this post.</p>
+                </div>
+
+                <aside class="toc"><h4 class="toc-title">Contents</h4><ul class="toc-list"><li class=""><a href="#what-one-memory-pool-means">What &ldquo;one memory pool&rdquo; means</a></li><li class=""><a href="#why-writing-a-reply-is-really-a-memory-job">Why writing a reply is really a memory job</a></li><li class=""><a href="#the-number-users-actually-feel">The number users actually feel</a></li><li class=""><a href="#four-ways-to-measure-this-wrong">Four ways to measure this wrong</a></li><li class="toc-sub"><a href="#1-a-background-python-thread-measures-python-not-the-hardware">1. A background Python thread measures Python, not the hardware</a></li><li class="toc-sub"><a href="#2-the-power-sensor-for-the-ane-does-not-exist-and-the-one-that-does-lags">2. The power sensor for the ANE does not exist, and the one that does lags</a></li><li class="toc-sub"><a href="#3-a-busy-desktop-changes-the-answer">3. A busy desktop changes the answer</a></li><li class="toc-sub"><a href="#4-drift-and-pooling-create-effects-that-are-not-there">4. Drift and pooling create effects that are not there</a></li><li class=""><a href="#the-test-setup">The test setup</a></li><li class=""><a href="#finding-1-a-cheap-stand-in-model-is-honest-on-a-slow-chip">Finding 1: a cheap stand-in model is honest on a slow chip</a></li><li class=""><a href="#finding-2-how-much-the-chat-model-loses">Finding 2: how much the chat model loses</a></li><li class=""><a href="#the-simple-rule">The simple rule</a></li><li class=""><a href="#why-a-fixed-rate-cap-wastes-the-machine">Why a fixed rate cap wastes the machine</a></li><li class=""><a href="#the-scheduler-watch-the-gaps-not-the-engine">The scheduler: watch the gaps, not the engine</a></li><li class=""><a href="#results">Results</a></li><li class=""><a href="#when-you-actually-need-this">When you actually need this</a></li><li class=""><a href="#energy-the-machine-pays-for-idle-time-anyway">Energy: the machine pays for idle time anyway</a></li><li class=""><a href="#where-this-fits">Where this fits</a></li><li class=""><a href="#what-i-still-do-not-know">What I still do not know</a></li><li class=""><a href="#takeaways">Takeaways</a></li><li class=""><a href="#artifact-and-reproducibility">Artifact and reproducibility</a></li></ul></aside>
+            </div>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="footer-copyright">&copy; 2026 bashketchum02</p>
+                <p class="footer-note">ml infrastructure &middot; social sciences</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bashketchum02" class="footer-link">GitHub</a>
+                <a href="https://x.com/bashketchum02" class="footer-link">X</a>
+                <a href="../feed.xml" class="footer-link">RSS</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+    <script>
+        document.querySelectorAll("code.language-mermaid").forEach(function(el) {
+            var pre = el.parentElement;
+            var div = document.createElement("pre");
+            div.className = "mermaid";
+            div.textContent = el.textContent;
+            pre.parentNode.replaceChild(div, pre);
+        });
+        hljs.highlightAll();
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script>
+        (function() {
+            window.addEventListener("message", function(event) {
+                if (!event.data || event.data.type !== "app:height") return;
+                var frames = document.querySelectorAll("iframe.app-frame");
+                for (var i = 0; i < frames.length; i++) {
+                    if (frames[i].contentWindow === event.source) {
+                        var h = parseInt(event.data.height, 10);
+                        if (h > 40 && h < 20000) frames[i].style.height = h + "px";
+                        return;
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

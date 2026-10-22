@@ -37,8 +37,8 @@ except ImportError:
 FONTS_LINK = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
     '    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-    '    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700'
-    '&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">'
+    '    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600'
+    '&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">'
 )
 
 
@@ -139,6 +139,7 @@ class BlogBuilder:
                 'toc',
                 'smarty',
                 'attr_list',
+                'md_in_html',
             ])
             return md.convert(content)
         else:
