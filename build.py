@@ -363,7 +363,8 @@ class BlogBuilder:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-{desc}    <link rel="icon" type="image/png" href="{prefix}images/intro.png">
+{desc}    <script>(function(){{try{{var t=localStorage.getItem('theme');if(!t){{var m=document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);if(m)t=m[1];}}if(t==='dark'){{document.documentElement.setAttribute('data-theme','dark')}}else{{document.documentElement.setAttribute('data-theme','light')}}}}catch(e){{document.documentElement.setAttribute('data-theme','light')}}}})();</script>
+    <link rel="icon" type="image/png" href="{prefix}images/intro.png">
     <link rel="stylesheet" href="{prefix}css/style.css">
     <link rel="stylesheet" href="{prefix}css/post.css">
     <link rel="stylesheet" href="{prefix}css/syntax.css">
@@ -383,6 +384,22 @@ class BlogBuilder:
             <div class="nav-links">
                 <a href="{prefix}index.html"{writing_active}>Writing</a>
                 <a href="{prefix}about.html"{about_active}>About</a>
+                <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark/light mode">
+                    <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2"></path>
+                        <path d="M12 20v2"></path>
+                        <path d="m4.93 4.93 1.41 1.41"></path>
+                        <path d="m17.66 17.66 1.41 1.41"></path>
+                        <path d="M2 12h2"></path>
+                        <path d="M20 12h2"></path>
+                        <path d="m6.34 17.66-1.41 1.41"></path>
+                        <path d="m19.07 4.93-1.41 1.41"></path>
+                    </svg>
+                    <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                    </svg>
+                </button>
             </div>
         </nav>
     </header>

@@ -5,9 +5,50 @@
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    initThemeToggle();
     initCodeCopy();
     initTOC();
 });
+
+/**
+ * Theme toggle functionality (Light / Dark)
+ */
+function initThemeToggle() {
+    const toggleBtn = document.getElementById('theme-toggle');
+    if (!toggleBtn) return;
+
+    function getStoredTheme() {
+        try {
+            const t = localStorage.getItem('theme');
+            if (t === 'dark' || t === 'light') return t;
+        } catch (e) {}
+        try {
+            const m = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
+            if (m && (m[1] === 'dark' || m[1] === 'light')) return m[1];
+        } catch (e) {}
+        return 'light'; // Default to light mode
+    }
+
+    function setStoredTheme(theme) {
+        try {
+            localStorage.setItem('theme', theme);
+        } catch (e) {}
+        try {
+            document.cookie = "theme=" + encodeURIComponent(theme) + ";path=/;max-age=31536000;SameSite=Lax";
+        } catch (e) {}
+    }
+
+    // Ensure state is set on DOM ready
+    const initialTheme = getStoredTheme();
+    document.documentElement.setAttribute('data-theme', initialTheme);
+
+    toggleBtn.addEventListener('click', () => {
+        const active = document.documentElement.getAttribute('data-theme') || getStoredTheme();
+        const nextTheme = active === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        setStoredTheme(nextTheme);
+    });
+}
 
 /**
  * Code block copy functionality

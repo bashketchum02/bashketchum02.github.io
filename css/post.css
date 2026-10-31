@@ -164,17 +164,15 @@
 
 .post-content mark,
 .post-content .highlight-text {
-    background: rgba(81, 71, 58, 0.16);
+    background: rgba(142, 93, 18, 0.14);
     color: inherit;
     padding: 0.1em 0.25em;
     border-radius: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
-    .post-content mark,
-    .post-content .highlight-text {
-        background: rgba(212, 163, 89, 0.22);
-    }
+[data-theme="dark"] .post-content mark,
+[data-theme="dark"] .post-content .highlight-text {
+    background: rgba(212, 163, 89, 0.22);
 }
 
 .post-content ul,

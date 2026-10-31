@@ -1,19 +1,19 @@
 /* ===== Apple Books Editorial Design System ===== */
 :root {
-    /* Apple Books Paper / Sepia Theme */
-    --bg: #f1e2c9;
-    --surface: #e8d9bd;
-    --surface-2: #dfcfb4;
-    --surface-hover: #e6d7bc;
-    --fg: #2a2016;
-    --fg-sec: #594c3f;
-    --fg-mid: #786857;
-    --fg-tertiary: #968674;
-    --border: #ded1bb;
-    --border-strong: #cdbfab;
-    --accent: #916719;
-    --accent-hover: #735010;
-    --accent-soft: rgba(145, 103, 25, 0.12);
+    /* Apple Books Paper / Light Theme */
+    --bg: #faf8f5;
+    --surface: #f2eee6;
+    --surface-2: #eae4d9;
+    --surface-hover: #ece5da;
+    --fg: #201e1d;
+    --fg-sec: #544e47;
+    --fg-mid: #786f66;
+    --fg-tertiary: #9c9287;
+    --border: #e5ded3;
+    --border-strong: #d2c7b7;
+    --accent: #8e5d12;
+    --accent-hover: #70490c;
+    --accent-soft: rgba(142, 93, 18, 0.10);
     --note-red: #8b1e19;
 
     --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -58,24 +58,39 @@
     --transition-base: 250ms ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* Apple Books Night Reading Mode */
-        --bg: #161513;
-        --surface: #201e1b;
-        --surface-2: #282522;
-        --surface-hover: #262320;
-        --fg: #e2dbce;
-        --fg-sec: #b0a698;
-        --fg-mid: #8f8577;
-        --fg-tertiary: #736a5e;
-        --border: #2e2b26;
-        --border-strong: #3d3933;
-        --accent: #d4a359;
-        --accent-hover: #e5b974;
-        --accent-soft: rgba(212, 163, 89, 0.15);
-        --note-red: #d9655c;
-    }
+[data-theme="light"] {
+    --bg: #faf8f5;
+    --surface: #f2eee6;
+    --surface-2: #eae4d9;
+    --surface-hover: #ece5da;
+    --fg: #201e1d;
+    --fg-sec: #544e47;
+    --fg-mid: #786f66;
+    --fg-tertiary: #9c9287;
+    --border: #e5ded3;
+    --border-strong: #d2c7b7;
+    --accent: #8e5d12;
+    --accent-hover: #70490c;
+    --accent-soft: rgba(142, 93, 18, 0.10);
+    --note-red: #8b1e19;
+}
+
+/* Apple Books Night Reading Mode (Activated only when user toggles dark mode) */
+[data-theme="dark"] {
+    --bg: #161513;
+    --surface: #201e1b;
+    --surface-2: #282522;
+    --surface-hover: #262320;
+    --fg: #e2dbce;
+    --fg-sec: #b0a698;
+    --fg-mid: #8f8577;
+    --fg-tertiary: #736a5e;
+    --border: #2e2b26;
+    --border-strong: #3d3933;
+    --accent: #d4a359;
+    --accent-hover: #e5b974;
+    --accent-soft: rgba(212, 163, 89, 0.15);
+    --note-red: #d9655c;
 }
 
 *, *::before, *::after {
@@ -113,13 +128,11 @@ img {
 
 ::selection {
     color: var(--fg);
-    background: rgba(81, 71, 58, 0.22);
+    background: rgba(142, 93, 18, 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-    ::selection {
-        background: rgba(212, 163, 89, 0.28);
-    }
+[data-theme="dark"] ::selection {
+    background: rgba(212, 163, 89, 0.28);
 }
 
 .mono {
@@ -189,6 +202,50 @@ img {
     text-decoration-color: var(--accent);
     text-underline-offset: 0.35em;
     text-decoration-thickness: 1px;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--fg-sec);
+    cursor: pointer;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.theme-toggle:hover {
+    color: var(--fg);
+    background: var(--surface-hover);
+}
+
+.theme-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Default / Light mode: show moon (to switch to dark), hide sun */
+.theme-toggle .theme-icon-sun {
+    display: none !important;
+}
+
+.theme-toggle .theme-icon-moon {
+    display: block;
+}
+
+/* Dark mode: show sun (to switch to light), hide moon */
+[data-theme="dark"] .theme-toggle .theme-icon-sun {
+    display: block !important;
+}
+
+[data-theme="dark"] .theme-toggle .theme-icon-moon {
+    display: none !important;
 }
 
 /* ===== Main Content ===== */
