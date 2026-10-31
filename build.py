@@ -38,7 +38,7 @@ FONTS_LINK = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
     '    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
     '    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600'
-    '&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">'
+    '&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">'
 )
 
 
@@ -363,7 +363,7 @@ class BlogBuilder:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-{desc}    <link rel="icon" type="image/svg+xml" href="{prefix}images/intro.svg">
+{desc}    <link rel="icon" type="image/png" href="{prefix}images/intro.png">
     <link rel="stylesheet" href="{prefix}css/style.css">
     <link rel="stylesheet" href="{prefix}css/post.css">
     <link rel="stylesheet" href="{prefix}css/syntax.css">
@@ -541,7 +541,7 @@ class BlogBuilder:
 
         index_html = f'''{self.page_head(self.site_name, "", self.site_description)}
 {self.render_header("", "writing")}        <section class="home-hero">
-            <img src="images/intro.svg" alt="">
+            <img src="images/intro.png" alt="">
         </section>
 
         <section class="posts-section">

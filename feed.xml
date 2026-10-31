@@ -6,21 +6,14 @@
         <description>bashketchum02 builds ML infrastructure and likes social sciences.</description>
         <atom:link href="https://bashketchum02.github.io/feed.xml" rel="self" type="application/rss+xml"/>
         <language>en-us</language>
-        <lastBuildDate>Thu, 22 Oct 2026 23:17:59 +0000</lastBuildDate>
+        <lastBuildDate>Sat, 31 Oct 2026 13:17:48 +0000</lastBuildDate>
         
         <item>
-            <title>sharing one memory bus on apple silicon</title>
-            <link>https://bashketchum02.github.io/posts/ane-coexecution.html</link>
-            <description>An assistant on your laptop rarely runs one model. A chat model writes the reply, and smaller helper models run beside it. On Apple Silicon they all share one pool of memory. I measured how much they slow each other down, found a simple rule for it, and built a scheduler that fixes most of the damage.</description>
-            <pubDate>2026-10-17</pubDate>
-            <guid>https://bashketchum02.github.io/posts/ane-coexecution.html</guid>
-        </item>
-        <item>
-            <title>the next big thing</title>
-            <link>https://bashketchum02.github.io/posts/next_big_thing.html</link>
-            <description>who set my goals?</description>
+            <title>split mindset</title>
+            <link>https://bashketchum02.github.io/posts/split.html</link>
+            <description>this, or that, or that, or none at all</description>
             <pubDate>2026-10-10</pubDate>
-            <guid>https://bashketchum02.github.io/posts/next_big_thing.html</guid>
+            <guid>https://bashketchum02.github.io/posts/split.html</guid>
         </item>
         <item>
             <title>interactive embeds</title>
